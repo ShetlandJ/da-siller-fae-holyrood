@@ -97,6 +97,16 @@ body {
   color: #cfc8b6;
   max-width: 22ch;
 }
+.hero-relatable {
+  margin: 2rem 0 0;
+  font-size: 1.05rem;
+  color: #efe9da;
+  max-width: 46ch;
+}
+.hero-relatable b {
+  color: var(--snp-yellow);
+  font-variant-numeric: tabular-nums;
+}
 
 /* --- Sections ------------------------------------------------------------ */
 section.block {
@@ -256,36 +266,64 @@ section.block {
   text-align: right;
 }
 
-/* in vs out bars */
-.vbars {
-  margin-top: 0.5rem;
+/* contribution bar: a known portion trailing into the unmeasured part */
+.contrib {
+  margin-top: 1.5rem;
 }
-.vbar-row {
-  margin: 0.85rem 0;
-}
-.vbar-row .vb-top {
-  display: flex;
-  justify-content: space-between;
+.contrib-label {
   font-size: 0.9rem;
-  margin-bottom: 0.3rem;
+  color: #444;
+  margin-bottom: 0.45rem;
 }
-.vbar-track {
-  height: 30px;
-  background: #efe9da;
+.contrib-track {
+  position: relative;
+  height: 48px;
   border-radius: 5px;
   overflow: hidden;
+  background: repeating-linear-gradient(
+    45deg,
+    #dfe5ec,
+    #dfe5ec 6px,
+    #eef1f5 6px,
+    #eef1f5 12px
+  );
 }
-.vbar-fill {
-  height: 100%;
+.contrib-unknown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0.7rem;
+  font-size: 0.76rem;
+  color: var(--slate);
+  text-align: right;
+}
+.contrib-known {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 0;
-  transition: width 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
-  border-radius: 5px;
-}
-.vbar-fill.in {
   background: var(--slate);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: width 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.vbar-fill.out {
-  background: var(--snp-gold);
+.contrib-known.grown {
+  width: 38%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .contrib-known {
+    width: 38%;
+    transition: none;
+  }
 }
 .chips {
   display: flex;

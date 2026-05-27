@@ -8,12 +8,17 @@ const H = 560;
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
-// Stepped yellow → amber ramp by index (largest tile = brightest yellow).
-function rampColour(i, n) {
-  const stops = ['#fff06b', '#ffe34a', '#fdd231', '#f4c81e', '#efb91b', '#e8a317', '#dd9410'];
-  if (n <= 1) return stops[0];
-  const idx = Math.round((i / (n - 1)) * (stops.length - 1));
-  return stops[Math.min(idx, stops.length - 1)];
+// Colour encodes magnitude: the bigger the block, the deeper the gold. Keyed to
+// value (not rank) so the two giants — council grant + NHS, ~82% of the total —
+// read as the heaviest blocks and the long tail of grants stays pale. sqrt scale
+// stops the smaller tiles all collapsing to the same pale shade.
+const C_LIGHT = [0xff, 0xe8, 0x76]; // pale warm yellow
+const C_DARK = [0xe0, 0x96, 0x1a]; // amber
+
+function colourForValue(v, maxV) {
+  const t = maxV > 0 ? Math.sqrt(v / maxV) : 0;
+  const ch = (i) => Math.round(C_LIGHT[i] + (C_DARK[i] - C_LIGHT[i]) * t);
+  return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`;
 }
 
 function el(name, attrs = {}) {
@@ -104,10 +109,11 @@ export function renderTreemap(container, data, onSelect) {
     const topPad = backTo ? 34 : 0;
     const sorted = [...items].sort((a, b) => b.value - a.value).map((d) => ({ ...d, area: d.value }));
     const placed = layout(sorted, 2, 2 + topPad, W - 4, H - 4 - topPad);
+    const maxV = Math.max(...placed.map((p) => p.value));
 
     placed.forEach((p, i) => {
       const g = el('g', { class: 'tm-tile' });
-      g.appendChild(el('rect', { x: p.x, y: p.y, width: Math.max(0, p.w - 2), height: Math.max(0, p.h - 2), rx: 4, fill: rampColour(i, placed.length) }));
+      g.appendChild(el('rect', { x: p.x, y: p.y, width: Math.max(0, p.w - 2), height: Math.max(0, p.h - 2), rx: 4, fill: colourForValue(p.value, maxV) }));
       const fmt = `£${p.value >= 10 ? p.value.toFixed(0) : p.value.toFixed(p.value < 1 ? 2 : 1)}m`;
       if (p.w > 70 && p.h > 34) {
         // wide enough: label and value stacked horizontally

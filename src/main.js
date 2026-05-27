@@ -32,6 +32,7 @@ app.innerHTML = `
           <span class="cap">for every woman, man and child</span>
         </span>
       </div>
+      <p class="hero-relatable">That's about <b>£212 a week</b> for every person — over <b>£800 a week</b> for a household of four.</p>
     </div>
   </header>
 
@@ -63,7 +64,7 @@ app.innerHTML = `
           </div>
           <div class="panel reveal">
             <h3>Are we paying our way?</h3>
-            <p class="sub">A rough look at what comes in against what goes out.</p>
+            <p class="sub">Shetland more than pulls its weight.</p>
             <div id="value"></div>
           </div>
         </div>
@@ -74,7 +75,7 @@ app.innerHTML = `
       <div class="wrap">
         <div class="section-head reveal">
           <p class="eyebrow">Section two</p>
-          <h2>What's da SNP düne fir Shetland?</h2>
+          <h2>Whits da SNP dun fur Shetland?</h2>
           <p>Beyond the headline funding, here's what that money has delivered on the ground. A handful of figures are flagged <span class="verify-chip">to verify</span> — they need checking against a named source before publication.</p>
         </div>
         <div id="achievements"></div>
