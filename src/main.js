@@ -19,8 +19,8 @@ const app = document.querySelector('#app');
 app.innerHTML = `
   <header class="hero">
     <div class="wrap">
-      <p class="kicker">What Scotland spends in Shetland</p>
-      <h1>Da siller fae Holyrood</h1>
+      <p class="kicker">Scottish Government funding</p>
+      <h1>What Scotland spends in Shetland</h1>
       <p class="lede">The Scottish Government puts more than a quarter of a billion pounds into Shetland every year. Here's where it comes from — and what it pays for.</p>
       <div class="hero-figures">
         <span class="bignum">
