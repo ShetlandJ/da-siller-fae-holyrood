@@ -29,7 +29,7 @@ export function renderValue(container, vfm) {
     <div class="contrib-label">What Shetland pays in to the UK Treasury</div>
     <div class="contrib-track">
       <div class="contrib-known">£${vfm.paysIn}m income tax</div>
-      <div class="contrib-unknown">+ VAT &amp; corp tax (raised here, not published) →</div>
+      <div class="contrib-unknown">+ VAT &amp; corp tax (not published) →</div>
     </div>
   `;
   container.appendChild(contrib);

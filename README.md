@@ -1,4 +1,4 @@
-# Da siller fae Holyrood
+# What Scotland spends in Shetland
 
 An independent data visualisation of Scottish Government funding in Shetland —
 where the £254m a year comes from, and what it pays for. Built from public

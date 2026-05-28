@@ -87,7 +87,7 @@ function draw(canvas, stat, fmt) {
   ctx.fillStyle = '#8f8a7c';
   ctx.font = `500 26px ${FONT}`;
   ctx.textBaseline = 'bottom';
-  ctx.fillText('Figures from public sources · shetlandj.github.io/da-siller-fae-holyrood', pad, h - pad - 26);
+  ctx.fillText('Figures from public sources · shetlandj.github.io/hmg', pad, h - pad - 26);
 
   // brand band
   ctx.fillStyle = '#fff06b';

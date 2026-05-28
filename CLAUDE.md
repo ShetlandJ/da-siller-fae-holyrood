@@ -9,7 +9,7 @@ where the ~£254m a year comes from, what it pays for, and a downloadable
 share-card generator. Built for a newly-elected SNP Shetland MSP (James's friend);
 James may take on a part-time digital role.
 
-Live: https://shetlandj.github.io/da-siller-fae-holyrood/ — repo: ShetlandJ/da-siller-fae-holyrood.
+Live: https://shetlandj.github.io/hmg/ — repo: ShetlandJ/hmg.
 
 ## Stack
 
@@ -92,7 +92,7 @@ Shetland dialect is welcome in section *headings* (`Whar's it aa come fae?`,
 `Whits da SNP dun fur Shetland?`). Keep the main page title and meta tags in
 plain English so social previews and screenshots travel. **Don't reintroduce
 "siller"** — it's Scots, not distinctively Shetlandic, and a native Shetlander
-flagged it as unfamiliar. The repo slug `da-siller-fae-holyrood` is legacy —
+flagged it as unfamiliar. The repo slug `hmg` is legacy —
 don't rename without James's say-so (it changes the public URL).
 
 ## Outstanding / known

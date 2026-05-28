@@ -368,13 +368,17 @@ section.block {
 .contrib-unknown {
   position: absolute;
   inset: 0;
+  /* sit ONLY inside the hatched portion so it can't collide with the solid bar */
+  padding-left: 38%;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 0 0.7rem;
+  padding-right: 0.7rem;
   font-size: 0.76rem;
   color: var(--slate);
   text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .contrib-known {
   position: absolute;
@@ -400,6 +404,14 @@ section.block {
   .contrib-known {
     width: 38%;
     transition: none;
+  }
+}
+@media (max-width: 600px) {
+  .contrib-known.grown {
+    width: 48%;
+  }
+  .contrib-unknown {
+    padding-left: 48%;
   }
 }
 .chips {
