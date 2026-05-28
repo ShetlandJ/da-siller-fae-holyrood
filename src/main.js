@@ -10,6 +10,7 @@ import {
 } from './data.js';
 import { countUp, wireReveal } from './charts/countup.js';
 import { renderTreemap } from './charts/treemap.js';
+import { renderFundingBars } from './charts/fundingbars.js';
 import { renderDonut } from './charts/donut.js';
 import { renderValue } from './charts/bars.js';
 import { initShareCard } from './charts/sharecard.js';
@@ -43,10 +44,11 @@ app.innerHTML = `
         <div class="section-head reveal">
           <p class="eyebrow">Section one</p>
           <h2>Whar's it aa come fae?</h2>
-          <p>The £254m breaks down like this. Bigger blocks mean more money. Click any block for the detail and source — the third-sector grants open up further.</p>
+          <p>The £254m breaks down like this. Bigger means more money. Tap any block for the detail and source — the third-sector grants open up further.</p>
         </div>
         <div class="treemap-shell reveal">
           <div id="treemap"></div>
+          <div id="funding-bars"></div>
           <div class="detail" id="tm-detail">
             <div class="d-head"><h4>Click a block to see the detail</h4></div>
             <p>Every figure is drawn from public budget documents — sources are listed at the foot of the page.</p>
@@ -112,11 +114,11 @@ countUp(document.querySelector('#n-head'), headline.perHead, {
   format: (n) => `£${Math.round(n).toLocaleString('en-GB')}`,
 });
 
-// --- Treemap + detail panel ----------------------------------------------
+// --- Funding viz (treemap on desktop, bar list on mobile) + detail panel --
 const detail = document.querySelector('#tm-detail');
-renderTreemap(document.querySelector('#treemap'), fundingSources, (sel) => {
+const onFundingSelect = (sel) => {
   if (!sel) {
-    detail.innerHTML = `<div class="d-head"><h4>Click a block to see the detail</h4></div><p>Every figure is drawn from public budget documents — sources are listed at the foot of the page.</p>`;
+    detail.innerHTML = `<div class="d-head"><h4>Tap a block to see the detail</h4></div><p>Every figure is drawn from public budget documents — sources are listed at the foot of the page.</p>`;
     return;
   }
   if (sel.drilled) {
@@ -127,7 +129,9 @@ renderTreemap(document.querySelector('#treemap'), fundingSources, (sel) => {
   detail.innerHTML = `<div class="d-head"><h4>${sel.label}</h4><span class="d-val">${val}</span></div>` +
     (sel.detail ? `<p>${sel.detail}</p>` : '') +
     (sel.source ? `<p class="src">Source: ${sel.source}</p>` : '');
-});
+};
+renderTreemap(document.querySelector('#treemap'), fundingSources, onFundingSelect);
+renderFundingBars(document.querySelector('#funding-bars'), fundingSources, onFundingSelect);
 
 // --- Donut + value bars ---------------------------------------------------
 renderDonut(document.querySelector('#donut'), sicBudget);
