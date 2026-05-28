@@ -34,7 +34,8 @@ src/
   main.js              # assembles the page (no framework)
   styles.css           # palette vars at the top; everything plain CSS
   charts/
-    treemap.js         # squarified SVG treemap with drill-down; colour by value (sqrt scale)
+    treemap.js         # squarified SVG treemap with drill-down (desktop only; colour by value, sqrt scale)
+    fundingbars.js     # tappable stacked-bar fallback shown on mobile (<=720px); same data + drill-down
     donut.js           # SIC budget donut
     bars.js            # "Are we paying our way?" — chips + honest contribution bar
     countup.js         # animated counters + the reveal-on-scroll wiring
