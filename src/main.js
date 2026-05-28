@@ -12,6 +12,7 @@ import { countUp, wireReveal } from './charts/countup.js';
 import { renderTreemap } from './charts/treemap.js';
 import { renderDonut } from './charts/donut.js';
 import { renderValue } from './charts/bars.js';
+import { initShareCard } from './charts/sharecard.js';
 import { statCard } from './components/statCard.js';
 
 const app = document.querySelector('#app');
@@ -81,6 +82,17 @@ app.innerHTML = `
         <div id="achievements"></div>
       </div>
     </section>
+
+    <section class="block">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="eyebrow">Share it</p>
+          <h2>Mak a graphic ta share</h2>
+          <p>Pick a figure and download a ready-made card for Facebook or Instagram. Square for a feed post, or full-screen for a story.</p>
+        </div>
+        <div id="sharecard" class="reveal"></div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -137,6 +149,9 @@ themes.forEach((theme) => {
   group.appendChild(grid);
   achWrap.appendChild(group);
 });
+
+// --- Share-card generator -------------------------------------------------
+initShareCard(document.querySelector('#sharecard'));
 
 // --- Sources list ---------------------------------------------------------
 const srcOl = document.querySelector('#sources');
