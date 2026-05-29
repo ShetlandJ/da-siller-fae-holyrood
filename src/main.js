@@ -35,7 +35,7 @@ app.innerHTML = `
         </span>
       </div>
       <p class="hero-relatable">That's about <b>£212 a week</b> for every person — over <b>£800 a week</b> for a household of four.</p>
-      <p class="hero-link"><a href="./visits.html">See also: <b>Around Shetland</b> — where she's been across the islands <span aria-hidden="true">→</span></a></p>
+      <p class="hero-link"><a href="./visits.html">See also: <b>Around Shetland</b> — where Hannah Mary's been across the islands <span aria-hidden="true">→</span></a></p>
     </div>
   </header>
 
