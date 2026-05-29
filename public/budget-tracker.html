@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Public spending for Scotland by function — 2015-16 to 2024-25</title>
+    <meta
+      name="description"
+      content="Analytical dashboard: total public spending for Scotland by function, 2015-16 to 2024-25, in cash and constant (2024-25) prices. Source: GERS 2024-25, Table 3.6."
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Public spending for Scotland by function — 2015-16 to 2024-25" />
+    <meta
+      property="og:description"
+      content="Total managed expenditure for Scotland by function over ten years, in cash and real terms. Source: GERS 2024-25."
+    />
+    <meta property="og:image" content="./og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <style>
+      :root {
+        --bg: #eef1f4;
+        --panel: #ffffff;
+        --ink: #1d2733;
+        --muted: #5e6976;
+        --faint: #8a939d;
+        --line: #d8dee5;
+        --line-2: #c5cdd6;
+        --accent: #2f6f9e;
+        --accent-2: #1f4e72;
+        --pos: #2e7d57;
+        --neg: #b0563f;
+        --reserved: #7a838f;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--bg); line-height: 1.5; }
+      .wrap { max-width: 1120px; margin: 0 auto; padding: 0 1.25rem; }
+      .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+      /* ---- report header ---- */
+      header.rpt { background: var(--panel); border-bottom: 1px solid var(--line); }
+      header.rpt .wrap { padding-top: 1.35rem; padding-bottom: 0; }
+      .crumb a { color: var(--accent); text-decoration: none; font-size: .78rem; font-weight: 600; }
+      .crumb a:hover { text-decoration: underline; }
+      h1 { font-size: clamp(1.4rem, 2.6vw, 1.8rem); margin: .55rem 0 .25rem; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
+      .subtitle { color: var(--muted); margin: 0 0 1rem; font-size: .96rem; max-width: 78ch; }
+      .metabar { display: flex; flex-wrap: wrap; gap: 0 1.6rem; border-top: 1px solid var(--line); }
+      .metabar div { font-size: .76rem; padding: .55rem 0; }
+      .metabar .k { text-transform: uppercase; letter-spacing: .06em; font-weight: 700; font-size: .64rem; color: var(--faint); display: block; margin-bottom: .12rem; }
+      .metabar .v { color: var(--ink); font-weight: 600; }
+      .metabar a { color: var(--accent); text-decoration: none; }
+      .metabar a:hover { text-decoration: underline; }
+
+      main { padding: 1.5rem 0 1rem; }
+
+      /* dashboard mode: content always visible, no reveal flourish */
+      .reveal { opacity: 1; transform: none; }
+
+      /* ---- KPI strip ---- */
+      .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: .85rem; margin: 0 0 1.3rem; }
+      @media (max-width: 820px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 460px) { .kpis { grid-template-columns: 1fr; } }
+      .kpi { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 7px; padding: .85rem 1rem; }
+      .kpi.pos { border-left-color: var(--pos); }
+      .kpi.neg { border-left-color: var(--neg); }
+      .kpi .kpi-k { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); margin: 0 0 .4rem; }
+      .kpi .kpi-v { font-size: 1.6rem; font-weight: 700; line-height: 1; letter-spacing: -.01em; }
+      .kpi.pos .kpi-v { color: var(--pos); }
+      .kpi.neg .kpi-v { color: var(--neg); }
+      .kpi .kpi-sub { font-size: .74rem; color: var(--muted); margin: .4rem 0 0; }
+
+      /* ---- panels ---- */
+      section.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 1.05rem 1.15rem 1.15rem; margin: 0 0 1.2rem; }
+      .panel-hd { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; border-bottom: 1px solid var(--line); padding-bottom: .65rem; margin-bottom: 1rem; }
+      .panel-hd h2 { font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: -.005em; }
+      .panel-hd .panel-meta { font-size: .78rem; color: var(--muted); }
+
+      /* ---- toggles / filters ---- */
+      .chart-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .7rem 1rem; margin: 0 0 .85rem; }
+      .chart-title { font-weight: 700; margin: 0; font-size: .92rem; }
+      .chart-sub { color: var(--muted); font-size: .8rem; margin: .15rem 0 0; }
+      .toggles { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+      .toggle { display: inline-flex; border: 1px solid var(--line-2); border-radius: 6px; overflow: hidden; }
+      .toggle button { appearance: none; border: 0; background: var(--panel); font: inherit; font-size: .78rem; font-weight: 600; color: var(--muted); padding: .36rem .72rem; cursor: pointer; }
+      .toggle button + button { border-left: 1px solid var(--line-2); }
+      .toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+      .toggle button:not([aria-pressed="true"]):hover { background: #eef3f7; color: var(--ink); }
+
+      .chart-stage { position: relative; }
+      svg.chart { width: 100%; height: auto; display: block; touch-action: pan-y; }
+      svg.chart .band { cursor: pointer; transition: opacity .12s ease; }
+      svg.chart.dimmed .band:not(.hot) { opacity: .25; }
+
+      .tip { position: absolute; pointer-events: none; background: #1d2733; color: #fff; font-size: .78rem; line-height: 1.4; padding: .45rem .6rem; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.22); opacity: 0; transition: opacity .1s ease; max-width: 244px; z-index: 4; }
+      .tip b { color: #8fc6ec; }
+      .tip .tip-sub { color: #aeb8c2; font-size: .72rem; }
+
+      .legend { display: flex; gap: .4rem .9rem; flex-wrap: wrap; font-size: .78rem; margin: .9rem 0 0; }
+      .legend button { appearance: none; border: 0; background: transparent; font: inherit; font-size: .78rem; color: var(--ink); display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; padding: .12rem .25rem; border-radius: 4px; }
+      .legend button:hover { background: #eef3f7; }
+      .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; flex: 0 0 auto; }
+
+      .hint { font-size: .76rem; color: var(--muted); margin: .75rem 0 0; }
+      .src { font-size: .72rem; color: var(--muted); margin: .85rem 0 0; }
+      .src a { color: var(--accent); }
+
+      .control-key { display: flex; gap: .4rem 1.2rem; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin: .8rem 0 0; }
+      .control-key span { display: inline-flex; align-items: center; gap: .4rem; }
+
+      .backbtn { appearance: none; border: 1px solid var(--line-2); background: var(--panel); font: inherit; font-size: .78rem; font-weight: 600; color: var(--ink); padding: .36rem .72rem; border-radius: 6px; cursor: pointer; display: none; }
+      .backbtn.show { display: inline-block; }
+      .backbtn:hover { background: #eef3f7; }
+
+      /* ---- per-function small multiples ---- */
+      .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(206px, 1fr)); gap: .7rem; }
+      .area-card { background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: .7rem .8rem .75rem; cursor: pointer; text-align: left; font: inherit; color: var(--ink); transition: border-color .12s ease, box-shadow .12s ease; }
+      .area-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+      .area-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .area-card .ac-label { font-weight: 600; font-size: .82rem; line-height: 1.2; margin: 0; color: var(--muted); }
+      .area-card .ac-row { display: flex; align-items: baseline; justify-content: space-between; gap: .4rem; margin: .3rem 0 0; }
+      .area-card .ac-val { font-size: 1.22rem; font-weight: 700; letter-spacing: -.01em; }
+      .area-card .ac-chg { font-size: .78rem; font-weight: 700; white-space: nowrap; }
+      .area-card .ac-chg.up { color: var(--pos); }
+      .area-card .ac-chg.down { color: var(--neg); }
+      .area-card .ac-spark { width: 100%; height: 40px; display: block; margin: .45rem 0 0; }
+      .area-card .ac-meta { font-size: .68rem; color: var(--muted); margin: .4rem 0 0; display: inline-flex; align-items: center; gap: .35rem; }
+      .area-card .ac-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+      /* ---- notes ---- */
+      .notes-list { margin: 0; padding-left: 1.1rem; font-size: .86rem; color: #3a434e; }
+      .notes-list li { margin: .42rem 0; }
+      .notes-list b { color: var(--ink); }
+
+      footer.foot { border-top: 1px solid var(--line); background: var(--panel); padding: 1.3rem 0 2rem; font-size: .78rem; color: var(--muted); margin-top: 1rem; }
+      footer.foot a { color: var(--accent); text-decoration: none; }
+      footer.foot a:hover { text-decoration: underline; }
+      footer.foot .sources { margin: .55rem 0 0; line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <header class="rpt">
+      <div class="wrap">
+        <p class="crumb"><a href="./">← Funding site</a></p>
+        <h1>Public spending for Scotland, by function</h1>
+        <p class="subtitle">
+          Total managed expenditure for Scotland, 2015-16 to 2024-25, by
+          functional classification — in cash and constant (2024-25) prices.
+        </p>
+        <div class="metabar">
+          <div><span class="k">Source</span><span class="v"><a href="https://www.gov.scot/publications/government-expenditure-revenue-scotland-2024-25/">GERS 2024-25, Table 3.6</a></span></div>
+          <div><span class="k">Status</span><span class="v">Accredited official statistics</span></div>
+          <div><span class="k">Measure</span><span class="v">Total expenditure (resource + capital)</span></div>
+          <div><span class="k">Units</span><span class="v">£ million</span></div>
+          <div><span class="k">Coverage</span><span class="v num">2015-16 – 2024-25</span></div>
+          <div><span class="k">Real terms</span><span class="v">HMT GDP deflator, 2024-25 = 100</span></div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <!-- ============ KPI STRIP ============ -->
+        <div class="kpis" id="kpis"></div>
+
+        <!-- ============ PER-FUNCTION SMALL MULTIPLES ============ -->
+        <section class="panel reveal" id="cards-section">
+          <div class="panel-hd">
+            <h2>By function — ten-year trend</h2>
+            <span class="panel-meta">Each function on its own scale · select to isolate below</span>
+          </div>
+          <div class="cards" id="area-cards"></div>
+        </section>
+
+        <!-- ============ STACKED-AREA PANEL ============ -->
+        <section class="panel reveal" id="tracker">
+          <div class="panel-hd">
+            <h2>Expenditure by function, by year</h2>
+            <span class="panel-meta">Stacked · hover for values · select a band to isolate</span>
+          </div>
+
+          <div class="chart-head">
+            <div>
+              <p class="chart-title" id="chart-title">All functions</p>
+              <p class="chart-sub" id="chart-subtitle">£ billion, real terms (2024-25 prices)</p>
+            </div>
+            <div class="toggles">
+              <div class="toggle" role="group" aria-label="Amount or share">
+                <button data-mode="abs" aria-pressed="true">£ billion</button>
+                <button data-mode="share" aria-pressed="false">% share</button>
+              </div>
+              <div class="toggle" role="group" aria-label="Cash or real terms">
+                <button data-terms="real" aria-pressed="true">Real terms</button>
+                <button data-terms="cash" aria-pressed="false">Cash</button>
+              </div>
+              <button class="backbtn" id="backbtn">← All functions</button>
+            </div>
+          </div>
+
+          <div class="chart-stage">
+            <svg class="chart" id="stack-chart" role="img"
+                 aria-label="Stacked area chart of public spending for Scotland by function, 2015-16 to 2024-25."></svg>
+            <div class="tip" id="tip"></div>
+          </div>
+
+          <div class="legend" id="legend"></div>
+
+          <div class="control-key">
+            <span><span class="swatch" style="background:#2f6f9e"></span> Largely devolved</span>
+            <span><span class="swatch" style="background:#7a838f"></span> Reserved (UK Government)</span>
+            <span><span class="swatch" style="background:#9aa6b2"></span> Mixed</span>
+          </div>
+          <p class="hint" id="chart-hint">Select a band or legend entry to isolate a function. Switch to % share for composition.</p>
+          <p class="hint">Note: 2020-21 includes pandemic support (chiefly the Economy function); reserved debt interest rose sharply from 2021-22.</p>
+          <p class="src">
+            Source: <a href="https://www.gov.scot/publications/government-expenditure-revenue-scotland-2024-25/">GERS 2024-25</a>, Table 3.6. Real terms via HM&nbsp;Treasury GDP deflators (Dec 2025), 2024-25 prices. Functions reconcile to the GERS published total in every year.
+          </p>
+        </section>
+
+        <!-- ============ NOTES & DEFINITIONS ============ -->
+        <section class="panel reveal" id="notes">
+          <div class="panel-hd"><h2>Notes &amp; definitions</h2></div>
+          <ul class="notes-list">
+            <li><b>Scope.</b> GERS total expenditure is all public spending for Scotland — devolved and reserved — at £117.6bn in 2024-25. This is wider than the devolved Scottish Budget (~£68bn).</li>
+            <li><b>Control.</b> The devolved / reserved / mixed marker is indicative. Social protection is mixed: UK-wide pensions and Universal Credit alongside devolved Scottish social security.</li>
+            <li><b>Real terms.</b> Constant 2024-25 prices using the HMT GDP deflator. The cash view shows figures as published.</li>
+            <li><b>Other &amp; accounting.</b> Smaller functions plus national-accounts adjustments required to reconcile to the published total; not a spending programme.</li>
+            <li><b>Reconciliation.</b> The twelve functions sum to the GERS published total in every year (residual &lt; £3m, rounding).</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p>
+          Companion to <a href="./">What Scotland spends in Shetland</a>.
+          Source data: <a href="https://www.gov.scot/publications/government-expenditure-revenue-scotland-2024-25/">Government Expenditure &amp; Revenue Scotland 2024-25</a>
+          (Scottish Government, accredited official statistics, August 2025),
+          © Crown copyright, Open Government Licence v3.0.
+        </p>
+        <p class="sources">
+          Inflation adjustment: <a href="https://www.gov.uk/government/collections/gdp-deflators-at-market-prices-and-money-gdp">HM Treasury GDP deflators</a>
+          (December 2025), rebased to 2024-25 = 100.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // ===================================================================
+      // DATA — extracted by scripts/extract-budget.mjs from GERS 2024-25
+      // Table 3.6 (cash) + HMT GDP deflators (real, 2024-25 prices).
+      // Every band sums to the published GERS total for each year.
+      // Bands listed bottom-to-top in stacking order.
+      // ===================================================================
+      const YEARS = ['2015-16','2016-17','2017-18','2018-19','2019-20','2020-21','2021-22','2022-23','2023-24','2024-25'];
+
+      const BANDS = [
+        { key:'social',      label:'Social protection',          control:'mixed',
+          cash:[23300,23089,23317,24220,24180,26117,26400,28656,32377,34922],
+          real:[31238,30347,30263,30735,29894,30686,30945,31383,33680,34922], color:'#7a98b8' },
+        { key:'health',      label:'Health',                     control:'holyrood',
+          cash:[12154,12662,12803,13082,13766,18171,19097,16884,18133,19751],
+          real:[16294,16642,16617,16600,17020,21350,22384,18491,18863,19751], color:'#2f6f9e' },
+        { key:'education',   label:'Education',                  control:'holyrood',
+          cash:[7836,8274,8493,8648,9258,10066,10294,10838,11370,11807],
+          real:[10506,10874,11024,10974,11446,11826,12066,11869,11827,11807], color:'#4f9d94' },
+        { key:'transport',   label:'Transport',                  control:'holyrood',
+          cash:[3163,3400,3579,3440,3709,4601,4608,4676,4249,4510],
+          real:[4241,4469,4646,4365,4586,5406,5401,5121,4420,4510], color:'#6fa8cc' },
+        { key:'order',       label:'Police, courts & safety',    control:'holyrood',
+          cash:[2818,2739,2846,2986,3169,3396,3571,3957,4108,4442],
+          real:[3778,3599,3694,3789,3918,3990,4185,4333,4274,4442], color:'#6fa97f' },
+        { key:'housing',     label:'Housing & communities',      control:'holyrood',
+          cash:[1569,1589,1847,2240,2326,2118,2460,2688,2608,3007],
+          real:[2104,2088,2397,2842,2876,2489,2884,2943,2713,3007], color:'#c89b54' },
+        { key:'economy',     label:'Economy, rural & enterprise', control:'holyrood',
+          cash:[2557,2892,2961,3163,3286,10737,4908,7470,4811,4485],
+          real:[3429,3801,3843,4014,4063,12615,5753,8181,5004,4485], color:'#bb7a4e' },
+        { key:'environment', label:'Environment',                control:'holyrood',
+          cash:[1250,1211,1225,1261,1454,1470,1467,1452,1518,1784],
+          real:[1676,1592,1590,1600,1798,1727,1720,1590,1579,1784], color:'#86b06a' },
+        { key:'culture',     label:'Culture & recreation',       control:'holyrood',
+          cash:[1403,1403,1318,1394,1374,1448,1549,1428,1602,1679],
+          real:[1881,1845,1711,1769,1698,1701,1815,1564,1667,1679], color:'#a4925e' },
+        { key:'other',       label:'Other & accounting',         control:'mixed',
+          cash:[9157,10241,10538,10607,11182,12015,11798,12479,15154,15306],
+          real:[12277,13460,13677,13460,13825,14117,13829,13667,15764,15306], color:'#c2c8cf' },
+        { key:'defence',     label:'Defence',                    control:'westminster',
+          cash:[3022,3057,3176,3294,3430,3608,3926,4471,4565,5118],
+          real:[4052,4018,4123,4180,4241,4239,4602,4896,4748,5118], color:'#8b939d' },
+        { key:'debt',        label:'Debt interest',              control:'westminster',
+          cash:[5001,5201,5578,5170,4996,3992,6470,11202,10933,10754],
+          real:[6704,6836,7239,6561,6177,4690,7584,12267,11373,10754], color:'#5d6671' },
+      ];
+
+      const CONTROL_LABEL = { holyrood:'Largely devolved (Scottish Government)', westminster:'Reserved (UK Government)', mixed:'Mixed devolved / reserved' };
+      const CONTROL_SHORT = { holyrood:'Devolved', westminster:'Reserved', mixed:'Mixed' };
+      const DOT = { holyrood:'#2f6f9e', westminster:'#7a838f', mixed:'#9aa6b2' };
+
+      // axis / grid colours (cool neutrals)
+      const AX = { zero:'#c5cdd6', grid:'#eaeef2', label:'#8a939d', sep:'#ffffff' };
+
+      // ---- state ----
+      const state = { mode: 'abs', terms: 'real', focus: null };
+
+      const svg = document.getElementById('stack-chart');
+      const tip = document.getElementById('tip');
+
+      // viewBox geometry — responsive: a narrower viewBox + larger relative
+      // fonts on phones so in-chart text stays legible when scaled to width.
+      let W, H, M, PW, PH, FS, FSV;
+      const N = YEARS.length;
+      function applyLayout() {
+        const mob = window.innerWidth <= 560;
+        W = mob ? 384 : 900;
+        H = mob ? 340 : 470;
+        M = mob ? { t: 12, r: 10, b: 30, l: 40 } : { t: 16, r: 14, b: 42, l: 52 };
+        PW = W - M.l - M.r;
+        PH = H - M.t - M.b;
+        FS = mob ? 13 : 11;     // axis label font (viewBox units)
+        FSV = mob ? 14 : 12.5;  // value label font
+      }
+      applyLayout();
+      const xAt = (i) => M.l + (N === 1 ? 0 : (i / (N - 1)) * PW);
+
+      const series = (b) => b[state.terms];
+      const yearTotal = (i) => BANDS.reduce((a, b) => a + series(b)[i], 0);
+
+      function fmtMoney(m) {            // m is £ million
+        if (m >= 1000) return '£' + (m / 1000).toFixed(m >= 10000 ? 0 : 1) + 'bn';
+        return '£' + Math.round(m) + 'm';
+      }
+      const fmtBn1 = (m) => '£' + (m / 1000).toFixed(1) + 'bn';
+      const fmtPct = (p) => p.toFixed(p < 10 ? 1 : 0) + '%';
+
+      function yMaxAbs() {
+        let m = 0; for (let i = 0; i < N; i++) m = Math.max(m, yearTotal(i));
+        return Math.ceil(m / 20000) * 20000;
+      }
+
+      // =================================================================
+      // KPI tiles (recompute with the cash/real filter)
+      // =================================================================
+      function buildKPIs() {
+        const tot = (i) => BANDS.reduce((a, b) => a + b[state.terms][i], 0);
+        const total = tot(N - 1);
+        const chg = (total / tot(0) - 1) * 100;
+        let big = BANDS[0]; BANDS.forEach((b) => { if (b[state.terms][N - 1] > big[state.terms][N - 1]) big = b; });
+        const bigShare = big[state.terms][N - 1] / total * 100;
+        let fast = BANDS[0], fastChg = -Infinity;
+        BANDS.forEach((b) => { const c = (b[state.terms][N - 1] / b[state.terms][0] - 1) * 100; if (c > fastChg) { fastChg = c; fast = b; } });
+        const tw = state.terms === 'real' ? 'real terms' : 'cash terms';
+        document.getElementById('kpis').innerHTML =
+          tile('Total expenditure · 2024-25', fmtBn1(total), `£${Math.round(total).toLocaleString()}m · ${tw}`, '') +
+          tile('Change · 2015-16 to 2024-25', (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(1) + '%', tw, chg >= 0 ? 'pos' : 'neg') +
+          tile('Largest function · 2024-25', bigShare.toFixed(0) + '%', `${big.label} · ${fmtMoney(big[state.terms][N - 1])}`, '') +
+          tile('Largest 10-yr rise', '+' + fastChg.toFixed(0) + '%', `${fast.label} · ${tw}`, 'pos');
+      }
+      function tile(k, v, sub, cls) {
+        return `<div class="kpi ${cls}"><p class="kpi-k">${k}</p><p class="kpi-v num">${v}</p><p class="kpi-sub num">${sub}</p></div>`;
+      }
+
+      // =================================================================
+      // OVERVIEW: stacked area
+      // =================================================================
+      function drawStack() {
+        applyLayout();
+        const share = state.mode === 'share';
+        const yMax = share ? 100 : yMaxAbs();
+        const yAt = (v) => M.t + PH - (v / yMax) * PH;
+
+        let s = '';
+        const ticks = share ? [0,25,50,75,100] : range0(yMax, 20000);
+        ticks.forEach((tk) => {
+          const y = yAt(tk);
+          s += `<line x1="${M.l}" y1="${y}" x2="${W - M.r}" y2="${y}" stroke="${tk===0?AX.zero:AX.grid}" stroke-width="1" />`;
+          const lab = share ? tk + '%' : (tk/1000) + 'bn';
+          s += `<text x="${M.l - 8}" y="${y + 4}" text-anchor="end" font-size="${FS}" fill="${AX.label}">${lab}</text>`;
+        });
+
+        const tops = [];
+        for (let i = 0; i < N; i++) {
+          const tot = yearTotal(i);
+          let acc = 0; const col = [];
+          for (const b of BANDS) { acc += share ? (series(b)[i] / tot * 100) : series(b)[i]; col.push(acc); }
+          tops.push(col);
+        }
+        BANDS.forEach((b, bi) => {
+          let up = '', down = '';
+          for (let i = 0; i < N; i++) {
+            const yTop = yAt(tops[i][bi]);
+            const yBot = yAt(bi === 0 ? 0 : tops[i][bi - 1]);
+            up += `${xAt(i).toFixed(1)},${yTop.toFixed(1)} `;
+            down = `${xAt(i).toFixed(1)},${yBot.toFixed(1)} ` + down;
+          }
+          s += `<polygon class="band" data-key="${b.key}" points="${up}${down}" fill="${b.color}" stroke="${AX.sep}" stroke-width="0.8" />`;
+        });
+
+        s += xAxis();
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.innerHTML = s;
+        wireBandEvents();
+      }
+
+      // =================================================================
+      // DETAIL: one function on its own
+      // =================================================================
+      function drawDetail(key) {
+        applyLayout();
+        const b = BANDS.find((x) => x.key === key);
+        const vals = series(b);
+        const yMax = Math.ceil(Math.max(...vals) / 1000) * 1000 * 1.12;
+        const yAt = (v) => M.t + PH - (v / yMax) * PH;
+
+        let s = '';
+        const ticks = range0(yMax, niceStep(yMax));
+        ticks.forEach((tk) => {
+          const y = yAt(tk);
+          s += `<line x1="${M.l}" y1="${y}" x2="${W - M.r}" y2="${y}" stroke="${tk===0?AX.zero:AX.grid}" stroke-width="1" />`;
+          s += `<text x="${M.l - 8}" y="${y + 4}" text-anchor="end" font-size="${FS}" fill="${AX.label}">${(tk/1000).toFixed(tk%1000?1:0)}bn</text>`;
+        });
+
+        let up = '', down = '';
+        for (let i = 0; i < N; i++) { up += `${xAt(i).toFixed(1)},${yAt(vals[i]).toFixed(1)} `; down = `${xAt(i).toFixed(1)},${yAt(0).toFixed(1)} ` + down; }
+        s += `<polygon points="${up}${down}" fill="${b.color}" opacity="0.85" />`;
+        let line = ''; for (let i = 0; i < N; i++) line += `${xAt(i).toFixed(1)},${yAt(vals[i]).toFixed(1)} `;
+        s += `<polyline points="${line}" fill="none" stroke="${b.color}" stroke-width="2" />`;
+        for (let i = 0; i < N; i++) {
+          const x = xAt(i), y = yAt(vals[i]);
+          s += `<circle cx="${x}" cy="${y}" r="3.2" fill="${b.color}" stroke="#ffffff" stroke-width="1.5" />`;
+          if (i === 0 || i === N - 1) {
+            s += `<text x="${x}" y="${y - 10}" text-anchor="${i===0?'start':'end'}" font-size="${FSV}" font-weight="700" fill="var(--ink)">${fmtMoney(vals[i])}</text>`;
+          }
+        }
+        s += xAxis();
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.innerHTML = s;
+      }
+
+      // ---- shared bits ----
+      function xAxis() {
+        let s = '';
+        for (let i = 0; i < N; i++) {
+          const skip = (window.innerWidth < 560) && (i % 2 === 1) && i !== N - 1;
+          if (skip) continue;
+          const anchor = i === 0 ? 'start' : (i === N - 1 ? 'end' : 'middle');
+          s += `<text x="${xAt(i)}" y="${H - M.b + 18}" text-anchor="${anchor}" font-size="${FS}" fill="${AX.label}">${YEARS[i]}</text>`;
+        }
+        return s;
+      }
+      function range0(max, step) { const a = []; for (let v = 0; v <= max + 1; v += step) a.push(v); return a; }
+      function niceStep(max) { const raw = max / 4; const p = Math.pow(10, Math.floor(Math.log10(raw))); const n = raw / p; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * p; }
+
+      // =================================================================
+      // interaction
+      // =================================================================
+      function wireBandEvents() {
+        svg.querySelectorAll('.band').forEach((poly) => {
+          const key = poly.dataset.key;
+          poly.addEventListener('mousemove', (e) => onHover(e, key));
+          poly.addEventListener('mouseenter', () => highlight(key));
+          poly.addEventListener('mouseleave', clearHover);
+          poly.addEventListener('click', () => focusBand(key));
+        });
+        svg.addEventListener('mouseleave', clearHover);
+      }
+      function highlight(key) {
+        svg.classList.add('dimmed');
+        svg.querySelectorAll('.band').forEach((p) => p.classList.toggle('hot', p.dataset.key === key));
+      }
+      function clearHover() {
+        svg.classList.remove('dimmed');
+        svg.querySelectorAll('.band.hot').forEach((p) => p.classList.remove('hot'));
+        tip.style.opacity = '0';
+      }
+      function nearestYear(e) {
+        const r = svg.getBoundingClientRect();
+        const vbX = (e.clientX - r.left) / r.width * W;
+        const i = Math.round((vbX - M.l) / PW * (N - 1));
+        return Math.max(0, Math.min(N - 1, i));
+      }
+      function onHover(e, key) {
+        const b = BANDS.find((x) => x.key === key);
+        const i = nearestYear(e);
+        const v = series(b)[i];
+        const sharePct = v / yearTotal(i) * 100;
+        tip.innerHTML = `<b>${b.label}</b><br>${YEARS[i]}: ${fmtMoney(v)} &middot; ${fmtPct(sharePct)} of total`
+          + `<br><span class="tip-sub">${CONTROL_LABEL[b.control]}</span>`;
+        const r = svg.getBoundingClientRect();
+        let left = (e.clientX - r.left) + 14;
+        if (left + 244 > r.width) left = (e.clientX - r.left) - 244;
+        tip.style.left = Math.max(0, left) + 'px';
+        tip.style.top = Math.max(0, (e.clientY - r.top) - 10) + 'px';
+        tip.style.opacity = '1';
+      }
+
+      function updateDetailMeta(key) {
+        const b = BANDS.find((x) => x.key === key);
+        const vals = series(b);
+        const chg = (vals[N - 1] / vals[0] - 1) * 100;
+        const share0 = vals[0] / BANDS.reduce((a, x) => a + series(x)[0], 0) * 100;
+        const share1 = vals[N - 1] / BANDS.reduce((a, x) => a + series(x)[N - 1], 0) * 100;
+        document.getElementById('chart-title').textContent = b.label;
+        document.getElementById('chart-subtitle').innerHTML =
+          `${state.terms === 'real' ? 'Real terms (2024-25 prices)' : 'Cash terms'} &middot; `
+          + `${chg >= 0 ? '+' : '−'}${Math.abs(chg).toFixed(0)}% over ten years &middot; `
+          + `${share0.toFixed(0)}% → ${share1.toFixed(0)}% of total &middot; ${CONTROL_LABEL[b.control]}`;
+      }
+      function focusBand(key) {
+        state.focus = key;
+        updateDetailMeta(key);
+        document.getElementById('chart-hint').innerHTML = 'Single function shown. Use <b>← All functions</b> to return, or select another from the key or cards.';
+        document.getElementById('backbtn').classList.add('show');
+        tip.style.opacity = '0';
+        drawDetail(key);
+      }
+      function unfocus() {
+        state.focus = null;
+        document.getElementById('chart-title').textContent = 'All functions';
+        setSubtitle();
+        document.getElementById('chart-hint').innerHTML = 'Select a band or legend entry to isolate a function. Switch to % share for composition.';
+        document.getElementById('backbtn').classList.remove('show');
+        drawStack();
+      }
+      function setSubtitle() {
+        document.getElementById('chart-subtitle').textContent =
+          (state.mode === 'share' ? '% share of total' : '£ billion')
+          + ', ' + (state.terms === 'real' ? 'real terms (2024-25 prices)' : 'cash terms');
+      }
+
+      function redraw() {
+        if (state.focus) { updateDetailMeta(state.focus); drawDetail(state.focus); }
+        else { drawStack(); setSubtitle(); }
+      }
+
+      // =================================================================
+      // legend (also acts as function picker)
+      // =================================================================
+      function buildLegend() {
+        const el = document.getElementById('legend');
+        el.innerHTML = BANDS.slice().reverse().map((b) =>
+          `<button data-key="${b.key}"><span class="swatch" style="background:${b.color}"></span>${b.label}</button>`
+        ).join('');
+        el.querySelectorAll('button').forEach((btn) => {
+          const key = btn.dataset.key;
+          btn.addEventListener('click', () => focusBand(key));
+          btn.addEventListener('mouseenter', () => { if (!state.focus) highlight(key); });
+          btn.addEventListener('mouseleave', () => { if (!state.focus) clearHover(); });
+        });
+      }
+
+      // =================================================================
+      // per-function small multiples (reflect cash/real; click isolates below)
+      // =================================================================
+      const CARD_ORDER = BANDS.slice().sort((a, b) => b.real[N - 1] - a.real[N - 1]);
+
+      function sparkline(vals, color) {
+        const w = 220, h = 40, p = 4;
+        const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1;
+        const x = (i) => p + i / (N - 1) * (w - 2 * p);
+        const y = (v) => h - p - (v - min) / span * (h - 2 * p);
+        let line = ''; for (let i = 0; i < N; i++) line += `${x(i).toFixed(1)},${y(vals[i]).toFixed(1)} `;
+        const area = `${x(0).toFixed(1)},${h - p} ${line}${x(N - 1).toFixed(1)},${h - p}`;
+        return `<svg class="ac-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">`
+          + `<polygon points="${area}" fill="${color}" opacity="0.14" />`
+          + `<polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />`
+          + `<circle cx="${x(N - 1).toFixed(1)}" cy="${y(vals[N - 1]).toFixed(1)}" r="2.5" fill="${color}" vector-effect="non-scaling-stroke" />`
+          + `</svg>`;
+      }
+
+      function buildCards() {
+        const el = document.getElementById('area-cards');
+        el.innerHTML = CARD_ORDER.map((b) => {
+          const vals = b[state.terms];
+          const chg = (vals[N - 1] / vals[0] - 1) * 100;
+          const up = chg >= 0;
+          return `<button class="area-card" data-key="${b.key}"
+                    aria-label="${b.label}: ${fmtMoney(vals[N - 1])} in 2024-25, ${up ? 'up' : 'down'} ${Math.abs(chg).toFixed(0)} percent over ten years. Open in chart.">
+              <p class="ac-label">${b.label}</p>
+              <div class="ac-row">
+                <span class="ac-val num">${fmtMoney(vals[N - 1])}</span>
+                <span class="ac-chg num ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(chg).toFixed(0)}%</span>
+              </div>
+              ${sparkline(vals, b.color)}
+              <span class="ac-meta"><span class="ac-dot" style="background:${DOT[b.control]}"></span>${CONTROL_SHORT[b.control]} &middot; 10-yr change</span>
+            </button>`;
+        }).join('');
+        el.querySelectorAll('.area-card').forEach((card) => {
+          card.addEventListener('click', () => {
+            focusBand(card.dataset.key);
+            document.getElementById('tracker').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        });
+      }
+
+      // =================================================================
+      // toggles
+      // =================================================================
+      document.querySelectorAll('.toggle button[data-mode]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.mode = btn.dataset.mode;
+          document.querySelectorAll('.toggle button[data-mode]').forEach((b) => b.setAttribute('aria-pressed', b === btn));
+          redraw();
+        });
+      });
+      document.querySelectorAll('.toggle button[data-terms]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.terms = btn.dataset.terms;
+          document.querySelectorAll('.toggle button[data-terms]').forEach((b) => b.setAttribute('aria-pressed', b === btn));
+          redraw();
+          buildCards();
+          buildKPIs();
+        });
+      });
+      document.getElementById('backbtn').addEventListener('click', unfocus);
+
+      // initial render
+      buildKPIs();
+      buildLegend();
+      buildCards();
+      drawStack();
+      setSubtitle();
+
+      // redraw x-axis density on resize (debounced)
+      let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (!state.focus) drawStack(); else drawDetail(state.focus); }, 200); });
+    </script>
+  </body>
+</html>

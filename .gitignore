@@ -5,3 +5,6 @@ dist
 
 # local tooling output
 .playwright-mcp
+
+# extraction source spreadsheets (large, re-downloadable — see scripts/extract-budget.mjs)
+scripts/data/*.xlsx
