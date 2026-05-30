@@ -183,7 +183,7 @@ export const achievements = [
     value: '1,310',
     label: 'Baby Boxes delivered to Shetland families since 2017',
     source: 'SNP',
-    status: 'confirmed',
+    status: 'to-verify',
   },
   // Education & young folk
   {
@@ -227,14 +227,14 @@ export const achievements = [
     value: '563',
     label: 'affordable and social homes built in Shetland since 2007',
     source: 'SNP',
-    status: 'confirmed',
+    status: 'to-verify',
   },
   {
     theme: 'housing',
     value: '815',
     label: 'children in Shetland benefiting from the Scottish Child Payment',
     source: 'SNP',
-    status: 'confirmed',
+    status: 'to-verify',
   },
   {
     theme: 'housing',
