@@ -134,6 +134,34 @@
       .legend .sw { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
       .legend .ramp { width: 60px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, #3f9d5a, #9bb43f, #d9920a, #e0731f, #d64545); }
 
+      /* ---------- Risk view toggle + table + tooltip ---------- */
+      .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 7px; overflow: hidden; }
+      .seg-btn { border: none; background: var(--paper); color: var(--muted); font-weight: 700; font-size: .78rem; padding: .35rem .75rem; }
+      .seg-btn + .seg-btn { border-left: 1px solid var(--line-strong); }
+      .seg-btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+      .seg-btn:not([aria-pressed="true"]):hover { background: #f1f5f7; color: var(--slate); }
+
+      .risk-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+      .risk-table th { text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; padding: .45rem .55rem; border-bottom: 1px solid var(--line); }
+      .risk-table td { padding: .55rem .55rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+      .risk-table tbody tr { cursor: pointer; }
+      .risk-table tbody tr:hover { background: #f4f7f9; }
+      .risk-table tbody tr:last-child td { border-bottom: none; }
+      .risk-num { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 21px; border-radius: 50%; color: #fff; font-weight: 800; font-size: .72rem; }
+      .lik-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; margin-right: 3px; }
+      .crit-chip { font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #9c2b2b; background: var(--red-soft); border: 1px solid #f0c4c4; border-radius: 4px; padding: .08rem .35rem; margin-left: .35rem; white-space: nowrap; }
+
+      .radar-tip {
+        position: fixed; z-index: 60; pointer-events: none; max-width: 230px;
+        background: var(--ink); color: #fff; border-radius: 8px; padding: .55rem .7rem;
+        font-size: .78rem; line-height: 1.35; box-shadow: 0 6px 20px rgba(15, 30, 45, 0.35);
+        opacity: 0; transition: opacity .12s ease;
+      }
+      .radar-tip.show { opacity: 1; }
+      .radar-tip b { display: block; font-size: .84rem; margin-bottom: .15rem; }
+      .radar-tip .row { color: #c9d4dd; }
+      .radar-tip .crit { color: #ffb4b4; font-weight: 700; margin-top: .15rem; }
+
       /* ---------- Spend / fiscal legends ---------- */
       .keyrow { display: flex; flex-wrap: wrap; gap: .55rem 1rem; margin-top: .7rem; font-size: .78rem; color: var(--slate); }
       .keyrow .li { display: inline-flex; align-items: center; gap: .4rem; }
@@ -267,15 +295,22 @@
           <div class="card-head">
             <h2>Risk radar</h2>
             <span class="spacer"></span>
+            <div class="seg" id="risk-view-toggle" role="tablist" aria-label="Risk view">
+              <button class="seg-btn" type="button" data-view="radar" aria-pressed="true">Radar</button>
+              <button class="seg-btn" type="button" data-view="table" aria-pressed="false">Table</button>
+            </div>
             <button class="btn-add" id="add-risk-btn">+ Add risk</button>
           </div>
-          <p class="card-sub">Distance from centre = how soon it could bite (now → 3 years). Colour = likelihood, size = impact. Click a risk to edit.</p>
-          <svg class="chart" id="radar-svg" role="img" aria-label="Risk radar"></svg>
-          <div class="legend">
-            <span class="li"><span class="ramp"></span> Likelihood 1 → 5</span>
-            <span class="li"><span class="sw" style="width:9px;height:9px;background:var(--slate)"></span><span class="sw" style="background:var(--slate)"></span> Size = impact</span>
-            <span class="li"><span class="sw" style="background:#fff;box-shadow:0 0 0 2px var(--ink)"></span> Critical</span>
+          <p class="card-sub">Distance from centre = how soon it could bite (now → 3 years). Colour = likelihood, size = impact. Hover for detail, click to edit.</p>
+          <div id="radar-view">
+            <svg class="chart" id="radar-svg" role="img" aria-label="Risk radar"></svg>
+            <div class="legend">
+              <span class="li"><span class="ramp"></span> Likelihood 1 → 5</span>
+              <span class="li"><span class="sw" style="width:9px;height:9px;background:var(--slate)"></span><span class="sw" style="background:var(--slate)"></span> Size = impact</span>
+              <span class="li"><span class="sw" style="background:#fff;box-shadow:0 0 0 2px var(--ink)"></span> Critical</span>
+            </div>
           </div>
+          <div id="risk-table-view" hidden></div>
         </section>
 
         <!-- Portfolio spend -->
@@ -598,7 +633,6 @@
           const stroke = r.critical ? 'var(--ink)' : '#ffffff';
           const sw = r.critical ? 2.5 : 2;
           s += `<g data-risk="${r.id}" style="cursor:pointer">`;
-          s += `<title>${escAttr(r.label)} — ${r.category}, likelihood ${r.likelihood}/5, ${r.impact} impact, ~${r.horizonMonths}m</title>`;
           s += `<circle cx="${pos.x.toFixed(1)}" cy="${pos.y.toFixed(1)}" r="${rr}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" />`;
           s += `<text x="${pos.x.toFixed(1)}" y="${(pos.y + 3.5).toFixed(1)}" text-anchor="middle" font-size="${rr > 9 ? 11 : 9}" font-weight="800" fill="#fff" style="pointer-events:none">${i + 1}</text>`;
           s += `</g>`;
@@ -606,6 +640,37 @@
         const svg = document.getElementById('radar-svg');
         svg.setAttribute('viewBox', `0 0 ${RAD.W} ${RAD.H}`);
         svg.innerHTML = s;
+      }
+
+      // Risk table view (same data, sorted as drawn so the numbers match the radar)
+      const IMPACT_LABEL = { low: 'Low', med: 'Medium', high: 'High' };
+      function renderRiskTable() {
+        const rows = pf().risks.map((r, i) => {
+          const col = LIK_COLORS[r.likelihood] || '#999';
+          return `<tr data-risk="${r.id}">
+            <td><span class="risk-num" style="background:${col}">${i + 1}</span></td>
+            <td>${escAttr(r.label)}${r.critical ? '<span class="crit-chip">Critical</span>' : ''}</td>
+            <td>${r.category}</td>
+            <td><span class="lik-dot" style="background:${col}"></span>${r.likelihood}/5</td>
+            <td>${IMPACT_LABEL[r.impact] || r.impact}</td>
+            <td>${r.horizonMonths} mo</td>
+          </tr>`;
+        }).join('');
+        document.getElementById('risk-table-view').innerHTML = `
+          <table class="risk-table">
+            <thead><tr><th>#</th><th>Risk</th><th>Category</th><th>Likelihood</th><th>Impact</th><th>Horizon</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+      function refreshRisks() { renderRadar(); renderRiskTable(); }
+
+      let riskView = 'radar';
+      function applyRiskView(v) {
+        riskView = v;
+        document.getElementById('radar-view').hidden = v !== 'radar';
+        document.getElementById('risk-table-view').hidden = v !== 'table';
+        document.querySelectorAll('#risk-view-toggle .seg-btn').forEach((b) =>
+          b.setAttribute('aria-pressed', String(b.dataset.view === v)));
       }
 
       // ====================================================================
@@ -757,7 +822,7 @@
               ${msHtml}
               <form class="ms-add" data-add-ms="${t.id}">
                 <input class="field" type="text" name="text" placeholder="New milestone…" required maxlength="80" />
-                <input class="field" type="text" name="date" placeholder="e.g. Sep 2026" maxlength="16" style="flex:0 0 110px" />
+                <input class="field" type="text" name="date" placeholder="Sep 2026" maxlength="16" style="flex:0 0 116px" />
                 <button class="btn-primary" type="submit">Add</button>
               </form>
             </div>
@@ -774,7 +839,7 @@
       function render() {
         document.getElementById('pf-title').textContent = pf().name;
         renderKpis();
-        renderRadar();
+        refreshRisks();
         renderSpend();
         renderFiscal();
         renderTargets();
@@ -867,6 +932,41 @@
         const risk = pf().risks.find((r) => r.id === g.dataset.risk);
         if (risk) openRiskModal(risk);
       });
+      // table rows open the same editor
+      document.getElementById('risk-table-view').addEventListener('click', (e) => {
+        const tr = e.target.closest('[data-risk]');
+        if (!tr) return;
+        const risk = pf().risks.find((r) => r.id === tr.dataset.risk);
+        if (risk) openRiskModal(risk);
+      });
+      // Radar / Table toggle
+      document.getElementById('risk-view-toggle').addEventListener('click', (e) => {
+        const b = e.target.closest('.seg-btn');
+        if (b) applyRiskView(b.dataset.view);
+      });
+      // Hover tooltip on radar bubbles
+      const radarTip = document.createElement('div');
+      radarTip.className = 'radar-tip';
+      document.body.appendChild(radarTip);
+      const radarSvgEl = document.getElementById('radar-svg');
+      radarSvgEl.addEventListener('mousemove', (e) => {
+        const g = e.target.closest('[data-risk]');
+        const r = g && pf().risks.find((x) => x.id === g.dataset.risk);
+        if (!r) { radarTip.classList.remove('show'); return; }
+        radarTip.innerHTML =
+          `<b>${escAttr(r.label)}</b>` +
+          `<div class="row">${r.category} · ${IMPACT_LABEL[r.impact] || r.impact} impact</div>` +
+          `<div class="row">Likelihood ${r.likelihood}/5 · ~${r.horizonMonths} months out</div>` +
+          (r.critical ? `<div class="crit">⚠ Critical</div>` : '');
+        const pad = 14, tw = 230, th = radarTip.offsetHeight || 88;
+        let x = e.clientX + pad, y = e.clientY + pad;
+        if (x + tw > window.innerWidth) x = e.clientX - tw - pad;
+        if (y + th > window.innerHeight) y = e.clientY - th - pad;
+        radarTip.style.left = x + 'px';
+        radarTip.style.top = y + 'px';
+        radarTip.classList.add('show');
+      });
+      radarSvgEl.addEventListener('mouseleave', () => radarTip.classList.remove('show'));
       document.getElementById('risk-cancel').addEventListener('click', closeRiskModal);
       riskForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -885,7 +985,7 @@
         } else {
           risks.push(Object.assign({ id: 'r' + Date.now() }, data));
         }
-        save(); renderKpis(); renderRadar();
+        save(); renderKpis(); refreshRisks();
         closeRiskModal();
       });
       document.getElementById('risk-delete').addEventListener('click', () => {
@@ -893,7 +993,7 @@
         if (!id) return;
         const p = pf();
         p.risks = p.risks.filter((r) => r.id !== id);
-        save(); renderKpis(); renderRadar();
+        save(); renderKpis(); refreshRisks();
         closeRiskModal();
       });
 
