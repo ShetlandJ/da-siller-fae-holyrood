@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PortfolioIQ — portfolio KPI dashboard</title>
+    <meta
+      name="description"
+      content="A portfolio-level KPI dashboard concept: risk radar, spend, fiscal outlook and delivery targets for each ministerial portfolio."
+    />
+    <style>
+      :root {
+        --ink: #1b2733;
+        --slate: #46586a;
+        --muted: #7c8a98;
+        --paper: #ffffff;
+        --bg: #eceff3;
+        --line: #e1e6ec;
+        --line-strong: #cdd5dd;
+        --accent: #2f6f8f;
+        --accent-dark: #1f5066;
+        --red: #d64545;
+        --amber: #d9920a;
+        --green: #3f9d5a;
+        --red-soft: #fbe9e9;
+        --amber-soft: #fbf1d8;
+        --green-soft: #e7f3ec;
+        --radius: 10px;
+        --shadow: 0 1px 2px rgba(20, 40, 60, 0.06), 0 4px 16px rgba(20, 40, 60, 0.05);
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; font-family: var(--font); color: var(--ink);
+        background: var(--bg); line-height: 1.5; font-size: 15px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.25rem; }
+      button { font: inherit; cursor: pointer; }
+
+      /* ---------- App bar ---------- */
+      .appbar {
+        background: var(--paper); border-bottom: 1px solid var(--line);
+        position: sticky; top: 0; z-index: 30;
+      }
+      .appbar-inner {
+        display: flex; align-items: center; gap: 1rem;
+        padding: .7rem 1.25rem; max-width: 1180px; margin: 0 auto;
+      }
+      .brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: -0.01em; font-size: 1.08rem; }
+      .brand .mark {
+        width: 30px; height: 30px; border-radius: 7px; background: var(--accent);
+        display: inline-flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 5px;
+      }
+      .brand .mark i { width: 4px; background: #fff; border-radius: 1px; display: block; }
+      .brand .mark i:nth-child(1) { height: 8px; opacity: .65; }
+      .brand .mark i:nth-child(2) { height: 14px; opacity: .82; }
+      .brand .mark i:nth-child(3) { height: 19px; }
+      .brand small { font-weight: 600; color: var(--muted); font-size: .72rem; letter-spacing: .02em; }
+      .appbar .spacer { flex: 1; }
+      .portfolio-pick { display: flex; align-items: center; gap: .5rem; }
+      .portfolio-pick label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--muted); }
+      select#portfolio {
+        font: inherit; font-weight: 700; color: var(--ink);
+        padding: .45rem 2rem .45rem .7rem; border: 1px solid var(--line-strong);
+        border-radius: 8px; background: var(--paper);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2346586a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right .7rem center;
+        -webkit-appearance: none; appearance: none; cursor: pointer;
+      }
+      .saved-pill {
+        display: inline-flex; align-items: center; gap: .4rem;
+        font-size: .76rem; font-weight: 700; color: var(--green);
+        background: var(--green-soft); border: 1px solid #bfe0cb;
+        padding: .35rem .65rem; border-radius: 999px;
+        opacity: 0; transform: translateY(-2px); transition: opacity .25s ease, transform .25s ease;
+        pointer-events: none;
+      }
+      .saved-pill.show { opacity: 1; transform: none; }
+      .saved-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+      .btn-ghost {
+        border: 1px solid var(--line-strong); background: var(--paper); color: var(--slate);
+        padding: .45rem .8rem; border-radius: 8px; font-weight: 600; font-size: .85rem;
+      }
+      .btn-ghost:hover { border-color: var(--muted); color: var(--ink); }
+
+      /* ---------- Sub-header ---------- */
+      .sub {
+        padding: 1.5rem 0 .4rem;
+      }
+      .sub h1 { font-size: clamp(1.4rem, 3.5vw, 1.9rem); margin: 0 0 .15rem; font-weight: 800; letter-spacing: -0.02em; }
+      .sub .meta { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; color: var(--muted); font-size: .85rem; }
+      .demo-badge {
+        font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 800;
+        color: var(--accent-dark); background: #e3eef3; border: 1px solid #cfe0e8;
+        padding: .22rem .55rem; border-radius: 5px;
+      }
+
+      /* ---------- KPI summary strip ---------- */
+      .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.1rem 0 1.6rem; }
+      .kpi {
+        background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: .9rem 1.05rem; box-shadow: var(--shadow);
+      }
+      .kpi .k-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--muted); }
+      .kpi .k-val { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.02em; margin-top: .2rem; line-height: 1.1; }
+      .kpi .k-sub { font-size: .78rem; color: var(--slate); margin-top: .15rem; }
+      .kpi .k-val .of { font-size: .95rem; font-weight: 700; color: var(--muted); }
+
+      /* ---------- Card grid ---------- */
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; padding-bottom: 2.5rem; }
+      .card {
+        background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 1.1rem 1.25rem 1.25rem; min-width: 0;
+      }
+      .card-head { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .2rem; }
+      .card-head h2 { font-size: 1.05rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+      .card-head .spacer { flex: 1; }
+      .card-sub { color: var(--muted); font-size: .82rem; margin: 0 0 .9rem; }
+      .btn-add {
+        border: 1px solid var(--accent); color: var(--accent-dark); background: #eef5f8;
+        padding: .35rem .7rem; border-radius: 7px; font-weight: 700; font-size: .8rem;
+        display: inline-flex; align-items: center; gap: .35rem;
+      }
+      .btn-add:hover { background: #e3eef3; }
+
+      .reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s ease; }
+      .reveal.in { opacity: 1; transform: none; }
+
+      /* ---------- Radar ---------- */
+      svg.chart { width: 100%; height: auto; display: block; }
+      .legend { display: flex; flex-wrap: wrap; gap: .9rem 1.2rem; margin-top: .7rem; font-size: .76rem; color: var(--slate); }
+      .legend .li { display: inline-flex; align-items: center; gap: .4rem; }
+      .legend .sw { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+      .legend .ramp { width: 60px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, #3f9d5a, #9bb43f, #d9920a, #e0731f, #d64545); }
+
+      /* ---------- Spend / fiscal legends ---------- */
+      .keyrow { display: flex; flex-wrap: wrap; gap: .55rem 1rem; margin-top: .7rem; font-size: .78rem; color: var(--slate); }
+      .keyrow .li { display: inline-flex; align-items: center; gap: .4rem; }
+      .keyrow .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+      .note { font-size: .78rem; color: var(--muted); margin: .7rem 0 0; font-style: italic; }
+
+      /* ---------- Targets ---------- */
+      .summary-line { display: flex; gap: .5rem; flex-wrap: wrap; margin: 0 0 .9rem; }
+      .pill {
+        display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 700;
+        padding: .25rem .6rem; border-radius: 999px; border: 1px solid transparent;
+      }
+      .pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+      .pill.green { background: var(--green-soft); color: #1f6b3a; border-color: #bfe0cb; }
+      .pill.green .dot { background: var(--green); }
+      .pill.amber { background: var(--amber-soft); color: #8a5d05; border-color: #ecd49a; }
+      .pill.amber .dot { background: var(--amber); }
+      .pill.red { background: var(--red-soft); color: #9c2b2b; border-color: #f0c4c4; }
+      .pill.red .dot { background: var(--red); }
+
+      .target { border: 1px solid var(--line); border-radius: 9px; margin-bottom: .65rem; overflow: hidden; }
+      .target-row { display: flex; align-items: center; gap: .8rem; padding: .7rem .85rem; }
+      .status-dot {
+        width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff;
+        box-shadow: 0 0 0 1px var(--line-strong); flex: 0 0 auto; padding: 0;
+        transition: transform .12s ease;
+      }
+      .status-dot:hover { transform: scale(1.12); }
+      .status-dot.red { background: var(--red); }
+      .status-dot.amber { background: var(--amber); }
+      .status-dot.green { background: var(--green); }
+      .t-main { flex: 1; min-width: 0; }
+      .t-name { font-weight: 700; }
+      .t-meta { font-size: .78rem; color: var(--muted); display: flex; gap: .9rem; flex-wrap: wrap; margin-top: .1rem; }
+      .t-meta b { color: var(--slate); font-weight: 700; }
+      .t-expand {
+        border: none; background: none; color: var(--muted); font-size: .8rem; font-weight: 700;
+        display: inline-flex; align-items: center; gap: .3rem; padding: .3rem;
+      }
+      .t-expand .chev { transition: transform .2s ease; display: inline-block; }
+      .target.open .t-expand .chev { transform: rotate(90deg); }
+      .ms-wrap { display: none; padding: 0 .85rem .85rem 3.4rem; }
+      .target.open .ms-wrap { display: block; }
+      .ms-list { list-style: none; margin: 0 0 .7rem; padding: 0; }
+      .ms-item { display: flex; align-items: flex-start; gap: .55rem; padding: .35rem 0; border-top: 1px dashed var(--line); font-size: .88rem; }
+      .ms-item:first-child { border-top: none; }
+      .ms-item input[type=checkbox] { margin-top: .2rem; width: 16px; height: 16px; accent-color: var(--accent); flex: 0 0 auto; }
+      .ms-item .ms-date { color: var(--muted); font-size: .76rem; font-weight: 700; white-space: nowrap; }
+      .ms-item.done .ms-text { color: var(--muted); text-decoration: line-through; }
+      .ms-empty { color: var(--muted); font-size: .82rem; font-style: italic; margin: 0 0 .6rem; }
+      .ms-add { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+      .ms-add input[type=text] { flex: 1 1 160px; min-width: 0; }
+      .field { font: inherit; padding: .45rem .6rem; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--paper); color: var(--ink); }
+      .field:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+      .btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent-dark); padding: .45rem .9rem; border-radius: 7px; font-weight: 700; }
+      .btn-primary:hover { background: var(--accent-dark); }
+
+      /* ---------- Modal ---------- */
+      .overlay {
+        position: fixed; inset: 0; background: rgba(20, 32, 44, 0.45);
+        display: none; align-items: center; justify-content: center; z-index: 50; padding: 1rem;
+      }
+      .overlay.show { display: flex; }
+      .modal { background: var(--paper); border-radius: 12px; width: 100%; max-width: 460px; box-shadow: 0 18px 50px rgba(15, 30, 45, 0.3); overflow: hidden; }
+      .modal h3 { margin: 0; padding: 1.1rem 1.3rem; font-size: 1.1rem; border-bottom: 1px solid var(--line); }
+      .modal form, .modal .body { padding: 1.1rem 1.3rem; }
+      .modal label.fl { display: block; font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--muted); margin: 0 0 .3rem; }
+      .modal .frow { margin-bottom: 1rem; }
+      .modal .frow:last-of-type { margin-bottom: 0; }
+      .modal .field, .modal select.field { width: 100%; }
+      .modal .two { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+      .modal .check { display: flex; align-items: center; gap: .5rem; }
+      .modal .check input { width: 17px; height: 17px; accent-color: var(--accent); }
+      .modal .check label { font-weight: 600; font-size: .9rem; color: var(--slate); }
+      .modal output.rangeval { font-weight: 700; color: var(--ink); }
+      input[type=range] { width: 100%; accent-color: var(--accent); }
+      .modal-actions { display: flex; align-items: center; gap: .6rem; padding: 1rem 1.3rem; border-top: 1px solid var(--line); background: #f7f9fb; }
+      .modal-actions .spacer { flex: 1; }
+      .btn-danger { border: 1px solid #e7b6b6; color: var(--red); background: #fdf3f3; padding: .45rem .8rem; border-radius: 7px; font-weight: 700; }
+      .btn-danger:hover { background: var(--red-soft); }
+
+      footer { color: var(--muted); font-size: .8rem; padding: 1.5rem 0 2.5rem; }
+      footer strong { color: var(--slate); }
+
+      @media (max-width: 860px) {
+        .grid { grid-template-columns: 1fr; }
+        .kpis { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 560px) {
+        .appbar-inner { flex-wrap: wrap; }
+        .brand small { display: none; }
+        .ms-wrap { padding-left: 1rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================ App bar ============================ -->
+    <div class="appbar">
+      <div class="appbar-inner">
+        <div class="brand">
+          <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          PortfolioIQ <small>Delivery &amp; risk</small>
+        </div>
+        <div class="spacer"></div>
+        <span class="saved-pill" id="saved"><span class="dot"></span> Saved</span>
+        <div class="portfolio-pick">
+          <label for="portfolio">Portfolio</label>
+          <select id="portfolio" aria-label="Choose portfolio"></select>
+        </div>
+        <button class="btn-ghost" id="reset-btn">Reset demo</button>
+      </div>
+    </div>
+
+    <main class="wrap">
+      <!-- ============================ Sub-header ============================ -->
+      <div class="sub">
+        <h1 id="pf-title">—</h1>
+        <div class="meta">
+          <span class="demo-badge">Illustrative demo data</span>
+          <span id="pf-tag">Portfolio KPI overview · updated live, saved to this browser</span>
+        </div>
+      </div>
+
+      <!-- ============================ KPI strip ============================ -->
+      <section class="kpis" id="kpis"></section>
+
+      <!-- ============================ Card grid ============================ -->
+      <div class="grid">
+        <!-- Risk radar -->
+        <section class="card reveal">
+          <div class="card-head">
+            <h2>Risk radar</h2>
+            <span class="spacer"></span>
+            <button class="btn-add" id="add-risk-btn">+ Add risk</button>
+          </div>
+          <p class="card-sub">Distance from centre = how soon it could bite (now → 3 years). Colour = likelihood, size = impact. Click a risk to edit.</p>
+          <svg class="chart" id="radar-svg" role="img" aria-label="Risk radar"></svg>
+          <div class="legend">
+            <span class="li"><span class="ramp"></span> Likelihood 1 → 5</span>
+            <span class="li"><span class="sw" style="width:9px;height:9px;background:var(--slate)"></span><span class="sw" style="background:var(--slate)"></span> Size = impact</span>
+            <span class="li"><span class="sw" style="background:#fff;box-shadow:0 0 0 2px var(--ink)"></span> Critical</span>
+          </div>
+        </section>
+
+        <!-- Portfolio spend -->
+        <section class="card reveal">
+          <div class="card-head"><h2>Portfolio spend</h2></div>
+          <p class="card-sub">Planned spend by category over three years (£m).</p>
+          <svg class="chart" id="spend-svg" role="img" aria-label="Portfolio spend by year"></svg>
+          <div class="keyrow" id="spend-key"></div>
+          <p class="note" id="spend-note"></p>
+        </section>
+
+        <!-- Revenue vs cost -->
+        <section class="card reveal">
+          <div class="card-head"><h2>Revenue vs cost outlook</h2></div>
+          <p class="card-sub">Projected revenue against the cost of delivery to 2030 (£bn).</p>
+          <svg class="chart" id="fiscal-svg" role="img" aria-label="Revenue versus cost projection"></svg>
+          <div class="keyrow">
+            <span class="li"><span class="sw" style="background:var(--accent)"></span> Revenue (tax, block grant)</span>
+            <span class="li"><span class="sw" style="background:var(--ink)"></span> Cost of delivery</span>
+            <span class="li"><span class="sw" style="background:var(--red);opacity:.35"></span> Funding gap</span>
+          </div>
+          <p class="note">The widening gap in later years is the structural shortfall — what the sketch called the “black hole”.</p>
+        </section>
+
+        <!-- Targets -->
+        <section class="card reveal">
+          <div class="card-head"><h2>Delivery targets</h2></div>
+          <p class="card-sub">Click the traffic light to change a target’s status. Expand to add a milestone.</p>
+          <div class="summary-line" id="target-summary"></div>
+          <div id="targets"></div>
+        </section>
+      </div>
+
+      <footer>
+        <strong>PortfolioIQ</strong> is a working concept for demonstration only. All figures, risks and
+        targets shown are illustrative placeholders, not official statistics. Changes you make are saved
+        in this browser and can be cleared with “Reset demo”.
+      </footer>
+    </main>
+
+    <!-- ============================ Risk modal ============================ -->
+    <div class="overlay" id="risk-overlay">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="risk-modal-title">
+        <h3 id="risk-modal-title">Add risk</h3>
+        <form id="risk-form">
+          <input type="hidden" id="risk-id" />
+          <div class="frow">
+            <label class="fl" for="risk-label">Risk</label>
+            <input class="field" type="text" id="risk-label" required maxlength="80" placeholder="e.g. Agency staffing cost overrun" />
+          </div>
+          <div class="frow two">
+            <div>
+              <label class="fl" for="risk-category">Category</label>
+              <select class="field" id="risk-category">
+                <option value="Safety">Safety</option>
+                <option value="Financial">Financial</option>
+                <option value="Reputational">Reputational</option>
+              </select>
+            </div>
+            <div>
+              <label class="fl" for="risk-impact">Impact</label>
+              <select class="field" id="risk-impact">
+                <option value="low">Low</option>
+                <option value="med">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+          <div class="frow">
+            <label class="fl" for="risk-likelihood">Likelihood — <output class="rangeval" id="risk-likelihood-out">3</output> / 5</label>
+            <input type="range" id="risk-likelihood" min="1" max="5" step="1" value="3" />
+          </div>
+          <div class="frow">
+            <label class="fl" for="risk-horizon">Time horizon — <output class="rangeval" id="risk-horizon-out">12 months</output></label>
+            <input type="range" id="risk-horizon" min="0" max="36" step="1" value="12" />
+          </div>
+          <div class="frow check">
+            <input type="checkbox" id="risk-critical" />
+            <label for="risk-critical">Flag as critical</label>
+          </div>
+        </form>
+        <div class="modal-actions">
+          <button class="btn-danger" id="risk-delete" type="button" style="display:none">Delete</button>
+          <span class="spacer"></span>
+          <button class="btn-ghost" id="risk-cancel" type="button">Cancel</button>
+          <button class="btn-primary" id="risk-save" type="submit" form="risk-form">Save risk</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================ Reset confirm ============================ -->
+    <div class="overlay" id="reset-overlay">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reset-title" style="max-width:400px">
+        <h3 id="reset-title">Reset demo?</h3>
+        <div class="body">This clears every change you’ve made and restores the original sample data across all portfolios.</div>
+        <div class="modal-actions">
+          <span class="spacer"></span>
+          <button class="btn-ghost" id="reset-cancel" type="button">Cancel</button>
+          <button class="btn-danger" id="reset-confirm" type="button">Reset everything</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ====================================================================
+      // PortfolioIQ — a self-contained KPI dashboard *demo*.
+      // No framework, no build step, no backend. State lives in localStorage
+      // so edits persist across reloads and the page behaves like a real
+      // product in a presentation. All data below is illustrative.
+      // ====================================================================
+
+      const STORE_KEY = 'kpi-demo-state-v1';
+
+      // Shared spend-category metadata (sequential blue scale).
+      const SEGMENTS = [
+        { key: 'SGA',   label: 'Staff & admin',        color: '#1b2733' },
+        { key: 'CAPEX', label: 'Capital',              color: '#2f6f8f' },
+        { key: 'OPEX',  label: 'Operating',            color: '#74a9c0' },
+        { key: 'PSP',   label: 'Programmes & support', color: '#b8d4e0' },
+      ];
+
+      const FISCAL_YEARS = ['2025', '2026', '2027', '2028', '2029', '2030'];
+      const SPEND_YEARS = ['25/26', '26/27', '27/28'];
+
+      // ---- Seed data (the immutable "factory" state) --------------------
+      const SEED = {
+        current: 'health',
+        portfolios: {
+          health: {
+            name: 'Health & Social Care',
+            risks: [
+              { id: 'h1', label: 'Delayed discharge / bed blocking', category: 'Safety', likelihood: 4, horizonMonths: 6, impact: 'high', critical: true },
+              { id: 'h2', label: 'Agency staffing cost overrun', category: 'Financial', likelihood: 5, horizonMonths: 12, impact: 'high', critical: false },
+              { id: 'h3', label: 'Waiting-times target slippage', category: 'Reputational', likelihood: 3, horizonMonths: 9, impact: 'med', critical: false },
+              { id: 'h4', label: 'Estate maintenance backlog', category: 'Safety', likelihood: 3, horizonMonths: 30, impact: 'med', critical: false },
+              { id: 'h5', label: 'Digital records migration', category: 'Financial', likelihood: 2, horizonMonths: 24, impact: 'low', critical: false },
+            ],
+            spend: { SGA: [180, 205, 235], CAPEX: [120, 140, 150], OPEX: [90, 95, 98], PSP: [40, 42, 45] },
+            spendNote: 'Staff & admin is the fastest-growing line — a rising share of the total.',
+            fiscal: { revenue: [4.2, 4.3, 4.35, 4.4, 4.45, 4.5], cost: [4.1, 4.3, 4.55, 4.8, 5.05, 5.35] },
+            targets: [
+              { id: 'ht1', name: 'A&E 4-hour waits met', value: '95%', targetDate: 'Mar 2027', status: 'amber', milestones: [ { text: 'Winter surge plan signed off', date: 'Nov 2025', done: true }, { text: 'Additional 40 beds online', date: 'Apr 2026', done: false } ] },
+              { id: 'ht2', name: 'Delayed discharges reduced', value: '−30%', targetDate: 'Dec 2026', status: 'red', milestones: [ { text: 'Social-care packages funded', date: 'Jan 2026', done: true } ] },
+              { id: 'ht3', name: 'GP appointment within 48h', value: '80%', targetDate: 'Sep 2027', status: 'green', milestones: [] },
+              { id: 'ht4', name: 'CAMHS waiting times', value: '18 wks', targetDate: 'Mar 2028', status: 'amber', milestones: [] },
+            ],
+          },
+          education: {
+            name: 'Education & Skills',
+            risks: [
+              { id: 'e1', label: 'Teacher recruitment shortfall', category: 'Financial', likelihood: 4, horizonMonths: 12, impact: 'high', critical: false },
+              { id: 'e2', label: 'Attainment gap widening', category: 'Reputational', likelihood: 4, horizonMonths: 18, impact: 'high', critical: true },
+              { id: 'e3', label: 'ASN provision pressure', category: 'Safety', likelihood: 3, horizonMonths: 9, impact: 'med', critical: false },
+              { id: 'e4', label: 'School estate condition', category: 'Safety', likelihood: 3, horizonMonths: 30, impact: 'med', critical: false },
+              { id: 'e5', label: 'College funding sustainability', category: 'Financial', likelihood: 3, horizonMonths: 24, impact: 'med', critical: false },
+            ],
+            spend: { SGA: [95, 108, 120], CAPEX: [60, 70, 72], OPEX: [55, 57, 60], PSP: [20, 22, 24] },
+            spendNote: 'Capital tails off after the school-build programme peaks in year two.',
+            fiscal: { revenue: [2.6, 2.65, 2.7, 2.72, 2.75, 2.78], cost: [2.5, 2.6, 2.72, 2.9, 3.08, 3.28] },
+            targets: [
+              { id: 'et1', name: 'Close the attainment gap', value: '+5pp', targetDate: 'Mar 2028', status: 'red', milestones: [ { text: 'Targeted funding to lowest quintile', date: 'Aug 2025', done: true } ] },
+              { id: 'et2', name: 'Recruit additional teachers', value: '3,500', targetDate: 'Aug 2027', status: 'amber', milestones: [ { text: 'Bursary scheme launched', date: 'Sep 2025', done: true } ] },
+              { id: 'et3', name: 'Free school meals P1–7', value: '100%', targetDate: 'Aug 2026', status: 'green', milestones: [] },
+              { id: 'et4', name: '1,140h funded early years', value: '100%', targetDate: 'Mar 2027', status: 'green', milestones: [] },
+            ],
+          },
+          transport: {
+            name: 'Transport & Connectivity',
+            risks: [
+              { id: 't1', label: 'Ageing ferry fleet reliability', category: 'Safety', likelihood: 5, horizonMonths: 6, impact: 'high', critical: true },
+              { id: 't2', label: 'A9 dualling cost escalation', category: 'Financial', likelihood: 5, horizonMonths: 18, impact: 'high', critical: false },
+              { id: 't3', label: 'Net-zero transport targets', category: 'Reputational', likelihood: 3, horizonMonths: 30, impact: 'med', critical: false },
+              { id: 't4', label: 'Island connectivity gaps', category: 'Safety', likelihood: 3, horizonMonths: 12, impact: 'med', critical: false },
+              { id: 't5', label: 'Rail subsidy pressure', category: 'Financial', likelihood: 3, horizonMonths: 24, impact: 'low', critical: false },
+            ],
+            spend: { SGA: [70, 80, 92], CAPEX: [210, 230, 245], OPEX: [60, 62, 64], PSP: [30, 33, 36] },
+            spendNote: 'Capital dominates — major fleet and road investment across the period.',
+            fiscal: { revenue: [1.8, 1.85, 1.9, 1.92, 1.95, 1.98], cost: [1.9, 2.0, 2.12, 2.28, 2.45, 2.65] },
+            targets: [
+              { id: 'tt1', name: 'New ferries in service', value: '6 vessels', targetDate: 'Mar 2028', status: 'amber', milestones: [ { text: 'First two vessels delivered', date: 'Dec 2025', done: true } ] },
+              { id: 'tt2', name: 'A9 dualling complete', value: '80 km', targetDate: 'Dec 2029', status: 'red', milestones: [] },
+              { id: 'tt3', name: 'Bus fares capped', value: '£2', targetDate: 'Apr 2026', status: 'green', milestones: [] },
+              { id: 'tt4', name: 'EV charge points', value: '6,000', targetDate: 'Mar 2027', status: 'amber', milestones: [] },
+            ],
+          },
+          justice: {
+            name: 'Justice & Communities',
+            risks: [
+              { id: 'j1', label: 'Court backlog', category: 'Reputational', likelihood: 4, horizonMonths: 12, impact: 'high', critical: true },
+              { id: 'j2', label: 'Prison capacity', category: 'Safety', likelihood: 5, horizonMonths: 9, impact: 'high', critical: true },
+              { id: 'j3', label: 'Legal aid sustainability', category: 'Financial', likelihood: 4, horizonMonths: 18, impact: 'med', critical: false },
+              { id: 'j4', label: 'Police estate condition', category: 'Safety', likelihood: 3, horizonMonths: 30, impact: 'med', critical: false },
+              { id: 'j5', label: 'Digital evidence systems', category: 'Financial', likelihood: 2, horizonMonths: 24, impact: 'low', critical: false },
+            ],
+            spend: { SGA: [85, 95, 105], CAPEX: [40, 48, 52], OPEX: [70, 73, 76], PSP: [25, 27, 29] },
+            spendNote: 'Operating costs lead — predominantly front-line staffing.',
+            fiscal: { revenue: [3.0, 3.05, 3.1, 3.12, 3.15, 3.18], cost: [2.9, 3.05, 3.22, 3.42, 3.62, 3.88] },
+            targets: [
+              { id: 'jt1', name: 'Clear the court backlog', value: '−40%', targetDate: 'Mar 2028', status: 'red', milestones: [ { text: 'Additional sitting days funded', date: 'Oct 2025', done: true } ] },
+              { id: 'jt2', name: 'Reduce prison population', value: '−1,200', targetDate: 'Dec 2027', status: 'amber', milestones: [] },
+              { id: 'jt3', name: 'Recorded crime down', value: '−10%', targetDate: 'Mar 2027', status: 'green', milestones: [] },
+              { id: 'jt4', name: 'Legal aid reform enacted', value: 'Enacted', targetDate: 'Sep 2027', status: 'amber', milestones: [] },
+            ],
+          },
+        },
+      };
+
+      // ---- State -------------------------------------------------------
+      const clone = (o) => JSON.parse(JSON.stringify(o));
+      let STATE;
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.portfolios && parsed.portfolios[parsed.current]) return parsed;
+          }
+        } catch (e) { /* fall through to seed */ }
+        return clone(SEED);
+      }
+      let savedTimer = null;
+      function save() {
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); } catch (e) {}
+        const pill = document.getElementById('saved');
+        pill.classList.add('show');
+        clearTimeout(savedTimer);
+        savedTimer = setTimeout(() => pill.classList.remove('show'), 1400);
+      }
+      const pf = () => STATE.portfolios[STATE.current];
+      const expanded = new Set(); // which target ids are open (not persisted)
+
+      // ====================================================================
+      // KPI summary strip
+      // ====================================================================
+      function fmtBn(v) { return '£' + v.toFixed(2) + 'bn'; }
+      function renderKpis() {
+        const p = pf();
+        const t = p.targets;
+        const green = t.filter((x) => x.status === 'green').length;
+        const red = t.filter((x) => x.status === 'red').length;
+        const crit = p.risks.filter((r) => r.critical).length;
+        const spend3 = SEGMENTS.reduce((s, seg) => s + p.spend[seg.key].reduce((a, b) => a + b, 0), 0);
+        const last = FISCAL_YEARS.length - 1;
+        const gap = p.fiscal.cost[last] - p.fiscal.revenue[last];
+        const tiles = [
+          { label: 'Targets on track', val: `${green}<span class="of"> / ${t.length}</span>`, sub: `${red} off track` },
+          { label: 'Open risks', val: `${p.risks.length}`, sub: `${crit} flagged critical` },
+          { label: '3-year spend', val: fmtBn(spend3 / 1000), sub: 'across all categories' },
+          { label: 'Projected 2030 gap', val: (gap > 0 ? '+' : '') + fmtBn(gap), sub: 'cost over revenue' },
+        ];
+        document.getElementById('kpis').innerHTML = tiles.map((k) => `
+          <div class="kpi">
+            <div class="k-label">${k.label}</div>
+            <div class="k-val">${k.val}</div>
+            <div class="k-sub">${k.sub}</div>
+          </div>`).join('');
+      }
+
+      // ====================================================================
+      // Risk radar (hand-rolled SVG quarter-sweep)
+      // ====================================================================
+      const RAD = { Ox: 50, Oy: 326, R: 296, innerR: 34, W: 430, H: 348 };
+      const CATS = ['Safety', 'Financial', 'Reputational'];
+      const LIK_COLORS = { 1: '#3f9d5a', 2: '#9bb43f', 3: '#d9920a', 4: '#e0731f', 5: '#d64545' };
+      const IMPACT_R = { low: 7, med: 11, high: 16 };
+
+      function hashFrac(str) { // deterministic [-1, 1] jitter per id
+        let h = 0;
+        for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
+        return (h / 0xffff) * 2 - 1;
+      }
+      function polar(deg, r) {
+        const rad = (deg * Math.PI) / 180;
+        return { x: RAD.Ox + r * Math.cos(rad), y: RAD.Oy - r * Math.sin(rad) };
+      }
+      function riskPos(r) {
+        const ci = Math.max(0, CATS.indexOf(r.category));
+        const center = ci * 30 + 15;            // 15 / 45 / 75 deg
+        const deg = center + hashFrac(r.id) * 11;
+        const rr = RAD.innerR + (Math.min(r.horizonMonths, 36) / 36) * (RAD.R - RAD.innerR);
+        return polar(deg, rr);
+      }
+      function arcPath(r) {
+        let pts = [];
+        for (let a = 0; a <= 90; a += 3) { const p = polar(a, r); pts.push(p.x.toFixed(1) + ',' + p.y.toFixed(1)); }
+        return 'M' + pts.join(' L');
+      }
+      function renderRadar() {
+        const p = pf();
+        let s = '';
+        // ring arcs at 1 / 2 / 3 years
+        [12, 24, 36].forEach((m) => {
+          const r = RAD.innerR + (m / 36) * (RAD.R - RAD.innerR);
+          s += `<path d="${arcPath(r)}" fill="none" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="3 4" />`;
+          const lp = polar(90, r);
+          s += `<text x="${lp.x - 6}" y="${lp.y + 11}" text-anchor="end" font-size="10" fill="var(--muted)">${m / 12} yr</text>`;
+        });
+        // sector dividers
+        [30, 60].forEach((a) => {
+          const a1 = polar(a, RAD.innerR), a2 = polar(a, RAD.R);
+          s += `<line x1="${a1.x}" y1="${a1.y}" x2="${a2.x}" y2="${a2.y}" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4" />`;
+        });
+        // bounding axes
+        const ex = polar(0, RAD.R), nx = polar(90, RAD.R);
+        s += `<line x1="${RAD.Ox}" y1="${RAD.Oy}" x2="${ex.x}" y2="${ex.y}" stroke="var(--line-strong)" stroke-width="1.5" />`;
+        s += `<line x1="${RAD.Ox}" y1="${RAD.Oy}" x2="${nx.x}" y2="${nx.y}" stroke="var(--line-strong)" stroke-width="1.5" />`;
+        // axis annotations
+        s += `<text x="${RAD.Ox - 6}" y="${RAD.Oy + 12}" text-anchor="end" font-size="10" font-weight="700" fill="var(--muted)">Now</text>`;
+        s += `<text x="${nx.x}" y="${nx.y - 8}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--muted)">3-yr horizon</text>`;
+        // category labels near the rim
+        CATS.forEach((c, i) => {
+          const lp = polar(i * 30 + 15, RAD.R + 12);
+          s += `<text x="${lp.x.toFixed(1)}" y="${lp.y.toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--slate)">${c}</text>`;
+        });
+        // bubbles
+        p.risks.forEach((r, i) => {
+          const pos = riskPos(r);
+          const rr = IMPACT_R[r.impact] || 10;
+          const fill = LIK_COLORS[r.likelihood] || '#999';
+          const stroke = r.critical ? 'var(--ink)' : '#ffffff';
+          const sw = r.critical ? 2.5 : 2;
+          s += `<g data-risk="${r.id}" style="cursor:pointer">`;
+          s += `<title>${escAttr(r.label)} — ${r.category}, likelihood ${r.likelihood}/5, ${r.impact} impact, ~${r.horizonMonths}m</title>`;
+          s += `<circle cx="${pos.x.toFixed(1)}" cy="${pos.y.toFixed(1)}" r="${rr}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" />`;
+          s += `<text x="${pos.x.toFixed(1)}" y="${(pos.y + 3.5).toFixed(1)}" text-anchor="middle" font-size="${rr > 9 ? 11 : 9}" font-weight="800" fill="#fff" style="pointer-events:none">${i + 1}</text>`;
+          s += `</g>`;
+        });
+        const svg = document.getElementById('radar-svg');
+        svg.setAttribute('viewBox', `0 0 ${RAD.W} ${RAD.H}`);
+        svg.innerHTML = s;
+      }
+
+      // ====================================================================
+      // Portfolio spend — stacked vertical bars
+      // ====================================================================
+      function renderSpend() {
+        const p = pf();
+        const W = 440, H = 290, padL = 40, padR = 14, padT = 14, padB = 40;
+        const plotW = W - padL - padR, plotH = H - padT - padB;
+        const totals = SPEND_YEARS.map((_, i) => SEGMENTS.reduce((s, seg) => s + p.spend[seg.key][i], 0));
+        const max = Math.max(...totals) * 1.12;
+        const y = (v) => padT + plotH - (v / max) * plotH;
+        const groupW = plotW / SPEND_YEARS.length;
+        const barW = Math.min(70, groupW * 0.5);
+        let s = '';
+        // y gridlines
+        const ticks = 4;
+        for (let t = 0; t <= ticks; t++) {
+          const v = (max / ticks) * t;
+          const yy = y(v);
+          s += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1" />`;
+          s += `<text x="${padL - 6}" y="${(yy + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)">${Math.round(v)}</text>`;
+        }
+        SPEND_YEARS.forEach((yr, i) => {
+          const cx = padL + groupW * i + groupW / 2;
+          let acc = 0;
+          SEGMENTS.forEach((seg) => {
+            const v = p.spend[seg.key][i];
+            const y0 = y(acc), y1 = y(acc + v);
+            s += `<rect x="${(cx - barW / 2).toFixed(1)}" y="${y1.toFixed(1)}" width="${barW.toFixed(1)}" height="${(y0 - y1).toFixed(1)}" fill="${seg.color}" />`;
+            acc += v;
+          });
+          // total label on top
+          s += `<text x="${cx.toFixed(1)}" y="${(y(acc) - 6).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">£${acc}m</text>`;
+          // year label
+          s += `<text x="${cx.toFixed(1)}" y="${H - padB + 18}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--slate)">${yr}</text>`;
+        });
+        // baseline
+        s += `<line x1="${padL}" y1="${(padT + plotH).toFixed(1)}" x2="${W - padR}" y2="${(padT + plotH).toFixed(1)}" stroke="var(--line-strong)" stroke-width="1.5" />`;
+        const svg = document.getElementById('spend-svg');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.innerHTML = s;
+        document.getElementById('spend-key').innerHTML = SEGMENTS.map((seg) =>
+          `<span class="li"><span class="sw" style="background:${seg.color}"></span> ${seg.label}</span>`).join('');
+        document.getElementById('spend-note').textContent = p.spendNote || '';
+      }
+
+      // ====================================================================
+      // Revenue vs cost — two lines + shaded gap
+      // ====================================================================
+      function renderFiscal() {
+        const p = pf();
+        const rev = p.fiscal.revenue, cost = p.fiscal.cost, n = FISCAL_YEARS.length;
+        const W = 440, H = 290, padL = 40, padR = 16, padT = 18, padB = 38;
+        const plotW = W - padL - padR, plotH = H - padT - padB;
+        const all = rev.concat(cost);
+        let lo = Math.min(...all), hi = Math.max(...all);
+        const pad = (hi - lo) * 0.15 || 1; lo -= pad; hi += pad;
+        const x = (i) => padL + (i / (n - 1)) * plotW;
+        const yv = (v) => padT + plotH - ((v - lo) / (hi - lo)) * plotH;
+        const ptsOf = (arr) => arr.map((v, i) => `${x(i).toFixed(1)},${yv(v).toFixed(1)}`).join(' ');
+
+        // gap polygon where cost >= revenue
+        let cf = -1; // crossover fraction
+        if (cost[0] >= rev[0]) cf = 0;
+        else for (let i = 1; i < n; i++) {
+          if (cost[i] >= rev[i]) {
+            const d0 = cost[i - 1] - rev[i - 1], d1 = cost[i] - rev[i];
+            cf = (i - 1) + d0 / (d0 - d1);
+            break;
+          }
+        }
+        let s = '';
+        // gridlines
+        const ticks = 4;
+        for (let t = 0; t <= ticks; t++) {
+          const v = lo + ((hi - lo) / ticks) * t, yy = yv(v);
+          s += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1" />`;
+          s += `<text x="${padL - 6}" y="${(yy + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)">${v.toFixed(1)}</text>`;
+        }
+        // gap fill
+        if (cf >= 0) {
+          const interp = (arr, f) => { const i = Math.floor(f); if (i >= n - 1) return arr[n - 1]; const t = f - i; return arr[i] + (arr[i + 1] - arr[i]) * t; };
+          const xAt = (f) => padL + (f / (n - 1)) * plotW;
+          let top = [], bot = [];
+          top.push(`${xAt(cf).toFixed(1)},${yv(interp(cost, cf)).toFixed(1)}`);
+          for (let i = Math.ceil(cf); i < n; i++) top.push(`${x(i).toFixed(1)},${yv(cost[i]).toFixed(1)}`);
+          for (let i = n - 1; i >= Math.ceil(cf); i--) bot.push(`${x(i).toFixed(1)},${yv(rev[i]).toFixed(1)}`);
+          bot.push(`${xAt(cf).toFixed(1)},${yv(interp(rev, cf)).toFixed(1)}`);
+          s += `<polygon points="${top.concat(bot).join(' ')}" fill="var(--red)" opacity="0.16" />`;
+          // gap annotation at final year
+          const gx = x(n - 1), gy = (yv(cost[n - 1]) + yv(rev[n - 1])) / 2;
+          s += `<text x="${(gx - 6).toFixed(1)}" y="${gy.toFixed(1)}" text-anchor="end" font-size="10" font-weight="700" fill="#a23030">funding gap</text>`;
+        }
+        // lines
+        s += `<polyline points="${ptsOf(rev)}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" />`;
+        s += `<polyline points="${ptsOf(cost)}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round" />`;
+        // end dots
+        s += `<circle cx="${x(n - 1).toFixed(1)}" cy="${yv(rev[n - 1]).toFixed(1)}" r="3.5" fill="var(--accent)" />`;
+        s += `<circle cx="${x(n - 1).toFixed(1)}" cy="${yv(cost[n - 1]).toFixed(1)}" r="3.5" fill="var(--ink)" />`;
+        // x labels
+        FISCAL_YEARS.forEach((yr, i) => {
+          s += `<text x="${x(i).toFixed(1)}" y="${H - padB + 18}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--slate)">${yr}</text>`;
+        });
+        const svg = document.getElementById('fiscal-svg');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.innerHTML = s;
+      }
+
+      // ====================================================================
+      // Delivery targets
+      // ====================================================================
+      const STATUS_ORDER = ['red', 'amber', 'green'];
+      const STATUS_LABEL = { red: 'Off track', amber: 'At risk', green: 'On track' };
+      function renderTargets() {
+        const p = pf();
+        const counts = { green: 0, amber: 0, red: 0 };
+        p.targets.forEach((t) => counts[t.status]++);
+        document.getElementById('target-summary').innerHTML =
+          `<span class="pill green"><span class="dot"></span> ${counts.green} on track</span>` +
+          `<span class="pill amber"><span class="dot"></span> ${counts.amber} at risk</span>` +
+          `<span class="pill red"><span class="dot"></span> ${counts.red} off track</span>`;
+
+        document.getElementById('targets').innerHTML = p.targets.map((t) => {
+          const open = expanded.has(t.id);
+          const ms = t.milestones || [];
+          const msHtml = ms.length
+            ? `<ul class="ms-list">${ms.map((m, mi) => `
+                <li class="ms-item ${m.done ? 'done' : ''}">
+                  <input type="checkbox" ${m.done ? 'checked' : ''} data-action="toggle-ms" data-target="${t.id}" data-ms="${mi}" aria-label="Mark milestone done" />
+                  <span class="ms-date">${escAttr(m.date || '')}</span>
+                  <span class="ms-text">${escAttr(m.text)}</span>
+                </li>`).join('')}</ul>`
+            : `<p class="ms-empty">No milestones yet.</p>`;
+          return `
+          <div class="target ${open ? 'open' : ''}">
+            <div class="target-row">
+              <button class="status-dot ${t.status}" data-action="cycle-status" data-target="${t.id}"
+                title="${STATUS_LABEL[t.status]} — click to change" aria-label="Status: ${STATUS_LABEL[t.status]}, click to change"></button>
+              <div class="t-main">
+                <div class="t-name">${escAttr(t.name)}</div>
+                <div class="t-meta"><span>Target <b>${escAttr(t.value)}</b></span><span>by <b>${escAttr(t.targetDate)}</b></span><span>${ms.length} milestone${ms.length === 1 ? '' : 's'}</span></div>
+              </div>
+              <button class="t-expand" data-action="toggle-expand" data-target="${t.id}" aria-expanded="${open}">
+                <span class="chev">›</span> ${open ? 'Hide' : 'Milestones'}
+              </button>
+            </div>
+            <div class="ms-wrap">
+              ${msHtml}
+              <form class="ms-add" data-add-ms="${t.id}">
+                <input class="field" type="text" name="text" placeholder="New milestone…" required maxlength="80" />
+                <input class="field" type="text" name="date" placeholder="e.g. Sep 2026" maxlength="16" style="flex:0 0 110px" />
+                <button class="btn-primary" type="submit">Add</button>
+              </form>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // ====================================================================
+      // Helpers + full render
+      // ====================================================================
+      function escAttr(str) {
+        return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+      function render() {
+        document.getElementById('pf-title').textContent = pf().name;
+        renderKpis();
+        renderRadar();
+        renderSpend();
+        renderFiscal();
+        renderTargets();
+      }
+
+      // ====================================================================
+      // Wiring
+      // ====================================================================
+      STATE = load();
+
+      // portfolio dropdown
+      const sel = document.getElementById('portfolio');
+      sel.innerHTML = Object.keys(STATE.portfolios).map((k) =>
+        `<option value="${k}">${escAttr(STATE.portfolios[k].name)}</option>`).join('');
+      sel.value = STATE.current;
+      sel.addEventListener('change', () => {
+        STATE.current = sel.value;
+        expanded.clear();
+        save();
+        render();
+      });
+
+      // targets: clicks (cycle status, expand)
+      document.getElementById('targets').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.dataset.target;
+        const t = pf().targets.find((x) => x.id === id);
+        if (!t) return;
+        if (btn.dataset.action === 'cycle-status') {
+          t.status = STATUS_ORDER[(STATUS_ORDER.indexOf(t.status) + 1) % STATUS_ORDER.length];
+          save(); renderKpis(); renderTargets();
+        } else if (btn.dataset.action === 'toggle-expand') {
+          if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+          renderTargets();
+        }
+      });
+      // targets: milestone done toggle
+      document.getElementById('targets').addEventListener('change', (e) => {
+        const cb = e.target.closest('[data-action="toggle-ms"]');
+        if (!cb) return;
+        const t = pf().targets.find((x) => x.id === cb.dataset.target);
+        if (!t) return;
+        t.milestones[+cb.dataset.ms].done = cb.checked;
+        save(); renderTargets();
+      });
+      // targets: add milestone
+      document.getElementById('targets').addEventListener('submit', (e) => {
+        const form = e.target.closest('[data-add-ms]');
+        if (!form) return;
+        e.preventDefault();
+        const t = pf().targets.find((x) => x.id === form.dataset.addMs);
+        if (!t) return;
+        const text = form.text.value.trim();
+        if (!text) return;
+        t.milestones.push({ text, date: form.date.value.trim(), done: false });
+        expanded.add(t.id);
+        save(); renderKpis(); renderTargets();
+      });
+
+      // ---- Risk modal --------------------------------------------------
+      const riskOverlay = document.getElementById('risk-overlay');
+      const riskForm = document.getElementById('risk-form');
+      const likRange = document.getElementById('risk-likelihood');
+      const horRange = document.getElementById('risk-horizon');
+      likRange.addEventListener('input', () => { document.getElementById('risk-likelihood-out').textContent = likRange.value; });
+      horRange.addEventListener('input', () => { document.getElementById('risk-horizon-out').textContent = horRange.value + (horRange.value === '1' ? ' month' : ' months'); });
+
+      function openRiskModal(risk) {
+        document.getElementById('risk-modal-title').textContent = risk ? 'Edit risk' : 'Add risk';
+        document.getElementById('risk-id').value = risk ? risk.id : '';
+        document.getElementById('risk-label').value = risk ? risk.label : '';
+        document.getElementById('risk-category').value = risk ? risk.category : 'Financial';
+        document.getElementById('risk-impact').value = risk ? risk.impact : 'med';
+        likRange.value = risk ? risk.likelihood : 3;
+        horRange.value = risk ? risk.horizonMonths : 12;
+        document.getElementById('risk-critical').checked = risk ? !!risk.critical : false;
+        likRange.dispatchEvent(new Event('input'));
+        horRange.dispatchEvent(new Event('input'));
+        document.getElementById('risk-delete').style.display = risk ? '' : 'none';
+        riskOverlay.classList.add('show');
+        setTimeout(() => document.getElementById('risk-label').focus(), 30);
+      }
+      function closeRiskModal() { riskOverlay.classList.remove('show'); }
+
+      document.getElementById('add-risk-btn').addEventListener('click', () => openRiskModal(null));
+      document.getElementById('radar-svg').addEventListener('click', (e) => {
+        const g = e.target.closest('[data-risk]');
+        if (!g) return;
+        const risk = pf().risks.find((r) => r.id === g.dataset.risk);
+        if (risk) openRiskModal(risk);
+      });
+      document.getElementById('risk-cancel').addEventListener('click', closeRiskModal);
+      riskForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('risk-id').value;
+        const data = {
+          label: document.getElementById('risk-label').value.trim() || 'Untitled risk',
+          category: document.getElementById('risk-category').value,
+          impact: document.getElementById('risk-impact').value,
+          likelihood: +likRange.value,
+          horizonMonths: +horRange.value,
+          critical: document.getElementById('risk-critical').checked,
+        };
+        const risks = pf().risks;
+        if (id) {
+          Object.assign(risks.find((r) => r.id === id), data);
+        } else {
+          risks.push(Object.assign({ id: 'r' + Date.now() }, data));
+        }
+        save(); renderKpis(); renderRadar();
+        closeRiskModal();
+      });
+      document.getElementById('risk-delete').addEventListener('click', () => {
+        const id = document.getElementById('risk-id').value;
+        if (!id) return;
+        const p = pf();
+        p.risks = p.risks.filter((r) => r.id !== id);
+        save(); renderKpis(); renderRadar();
+        closeRiskModal();
+      });
+
+      // ---- Reset -------------------------------------------------------
+      const resetOverlay = document.getElementById('reset-overlay');
+      document.getElementById('reset-btn').addEventListener('click', () => resetOverlay.classList.add('show'));
+      document.getElementById('reset-cancel').addEventListener('click', () => resetOverlay.classList.remove('show'));
+      document.getElementById('reset-confirm').addEventListener('click', () => {
+        STATE = clone(SEED);
+        expanded.clear();
+        save();
+        sel.value = STATE.current;
+        resetOverlay.classList.remove('show');
+        render();
+      });
+
+      // ---- Overlay dismissal (backdrop click + ESC) --------------------
+      [riskOverlay, resetOverlay].forEach((ov) => {
+        ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('show'); });
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { riskOverlay.classList.remove('show'); resetOverlay.classList.remove('show'); }
+      });
+
+      // ---- First paint -------------------------------------------------
+      render();
+
+      // ---- Reveal-on-scroll: threshold 0 + 3s safety timer that
+      //      force-reveals everything. Content must never stay invisible.
+      const revealed = new Set();
+      function reveal(el) { if (revealed.has(el)) return; revealed.add(el); el.classList.add('in'); }
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) { reveal(e.target); io.unobserve(e.target); } });
+      }, { threshold: 0 });
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+      setTimeout(() => { document.querySelectorAll('.reveal').forEach(reveal); }, 3000);
+    </script>
+  </body>
+</html>
