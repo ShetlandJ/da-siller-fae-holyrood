@@ -11,7 +11,7 @@ app.innerHTML = `
   <header class="hero">
     <div class="wrap">
       <p class="kicker">What Scotland spends in Shetland</p>
-      <h1>Mak a graphic ta share</h1>
+      <h1>Make a graphic to share</h1>
       <p class="lede">Pick a figure and download a ready-made card for Facebook or Instagram. Square for a feed post, or full-screen for a story.</p>
       <p class="hero-link"><a href="./index.html"><span aria-hidden="true">←</span> Back to the full breakdown of where the <b>£254m a year</b> comes from</a></p>
     </div>
