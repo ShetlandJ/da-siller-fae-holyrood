@@ -93,6 +93,7 @@ app.innerHTML = `
           <p class="eyebrow">Share it</p>
           <h2>Mak a graphic ta share</h2>
           <p>Pick a figure and download a ready-made card for Facebook or Instagram. Square for a feed post, or full-screen for a story.</p>
+          <p class="hero-link"><a href="./share.html"><b>Open the graphic maker on its own page</b> — easier to link or bookmark <span aria-hidden="true">→</span></a></p>
         </div>
         <div id="sharecard" class="reveal"></div>
       </div>
