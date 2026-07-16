@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Berlin-Mitte round — a timed walking route</title>
+    <meta
+      name="description"
+      content="A one-morning walking route through Berlin-Mitte, from Sant Buena, ordered by opening times."
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      :root {
+        --snp-yellow: #fff06b;
+        --snp-gold: #f4c81e;
+        --snp-amber: #e8a317;
+        --ink: #1b1b1b;
+        --cream: #fbf7ec;
+        --paper: #ffffff;
+        --line: #e7e0cf;
+        --muted: #6b6b6b;
+        --verify: #e8a317;
+        --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--cream); line-height: 1.55; }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.25rem; }
+
+      header.hero { background: var(--ink); color: var(--cream); padding: 3rem 0 2.75rem; position: relative; }
+      header.hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--snp-yellow); }
+      h1 { font-size: clamp(1.9rem, 5vw, 2.7rem); margin: .3rem 0 .6rem; font-weight: 800; }
+      .lede { color: #efe9da; max-width: 62ch; margin: 0; font-size: 1.05rem; }
+      .kicker { color: var(--snp-yellow); font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin: 0; }
+
+      main { padding: 2.25rem 0 3rem; }
+      .note {
+        background: #fff8e2; border: 1px solid #f0dfa8; border-left: 4px solid var(--snp-amber);
+        border-radius: 8px; padding: .9rem 1.1rem; margin: 0 0 1.75rem; font-size: .95rem; color: #4a4025;
+      }
+      .note strong { color: var(--ink); }
+
+      .layout { display: grid; grid-template-columns: 1fr 1.25fr; gap: 1.25rem; align-items: start; }
+      @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+      #map { height: 620px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: #eee; position: sticky; top: 1rem; }
+      @media (max-width: 900px) { #map { height: 400px; position: static; } }
+      .leaflet-control-attribution { font-size: 11px !important; background: rgba(255,255,255,0.85) !important; }
+
+      /* numbered route pin */
+      .route-pin {
+        width: 30px; height: 30px; border-radius: 50%;
+        background: var(--snp-yellow); border: 2.5px solid var(--ink);
+        box-shadow: 0 3px 6px rgba(0,0,0,.25);
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 14px; color: var(--ink);
+      }
+      .route-pin.start { background: var(--ink); color: var(--snp-yellow); }
+
+      ol.stops { list-style: none; margin: 0; padding: 0; }
+      .stop {
+        display: grid; grid-template-columns: 40px 1fr; gap: .85rem;
+        background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+        padding: 1rem 1.1rem; margin-bottom: .7rem; cursor: pointer; transition: border-color .15s, box-shadow .15s;
+        width: 100%; text-align: left; font: inherit; color: inherit;
+      }
+      .stop:hover, .stop.is-active { border-color: var(--snp-amber); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+      .stop .badge {
+        width: 30px; height: 30px; border-radius: 50%; background: var(--snp-yellow); border: 2px solid var(--ink);
+        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;
+      }
+      .stop.start .badge { background: var(--ink); color: var(--snp-yellow); }
+      .stop .time { font-weight: 800; font-size: 1.05rem; }
+      .stop .name { font-weight: 700; margin: 0; }
+      .stop .name .tag { font-weight: 500; color: var(--muted); font-size: .85rem; margin-left: .35rem; }
+      .stop .addr { color: var(--muted); font-size: .85rem; margin: .1rem 0 .35rem; }
+      .stop .body { font-size: .92rem; margin: 0; }
+      .stop .walk { display: inline-block; margin-top: .55rem; font-size: .8rem; color: #7a6a2f; font-weight: 600; }
+
+      .dropped { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px dashed var(--line); }
+      .dropped h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 .5rem; }
+      .dropped ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: .92rem; }
+      .dropped s { text-decoration-color: var(--snp-amber); }
+
+      footer { border-top: 1px solid var(--line); padding: 1.5rem 0; color: var(--muted); font-size: .85rem; }
+      footer a { color: #8a6d12; }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="wrap">
+        <p class="kicker">Berlin-Mitte · one morning</p>
+        <h1>The Hackesche Höfe round</h1>
+        <p class="lede">
+          Eight stops, all inside a 600&nbsp;m pocket of Mitte, starting from
+          <strong>Sant Buena</strong> at half seven. The walking is trivial —
+          what really sets the order is <strong>when each place opens</strong>.
+        </p>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <p class="note">
+          A true <strong>&ldquo;Chinese postman&rdquo;</strong> route is the shortest walk that covers every
+          <em>street</em> — but this is a handful of <em>destinations</em> in one small quarter, so it's really a
+          stop-order (travelling-salesman) problem. And with everything a few minutes' walk apart, distance barely
+          matters: the route below is sequenced by <strong>opening time</strong>, coffee first, latest opener last.
+          Total walking is about 20&nbsp;minutes; the morning is paced by the shutters going up.
+        </p>
+
+        <div class="layout">
+          <div id="map"></div>
+          <ol class="stops" id="stops"></ol>
+        </div>
+
+        <div class="dropped">
+          <h2>Dropped from the round</h2>
+          <ul>
+            <li><s>Hay</s> — cut as asked.</li>
+            <li><s>Football shirt shop (4pm)</s> — cut as asked (and already scored off the list).</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        Map tiles © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ©
+        <a href="https://carto.com/attributions">CARTO</a>. Addresses gathered from each venue's public listing —
+        double-check opening hours on the day, they drift.
+      </div>
+    </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script>
+      // -----------------------------------------------------------------
+      // The round. Order = opening time, coffee first. Coordinates are
+      // approximate (venue-listing level) but faithful to the cluster —
+      // everything sits around the Hackesche Höfe / Hackescher Markt.
+      // -----------------------------------------------------------------
+      const stops = [
+        {
+          lat: 52.5301, lng: 13.3998, time: '07:30', open: 'opens ~07:30',
+          name: 'Sant Buena', kind: 'coffee & breakfast', start: true,
+          addr: 'Torstraße 153',
+          body: 'The start. Corner store, market and café in one — grab a coffee and an avocado toast while the rest of Mitte is still shut. Nothing else opens until 9, so no rush.',
+          walk: 'then ~8 min south to Sophienstraße',
+        },
+        {
+          lat: 52.5253, lng: 13.4009, time: '09:00', open: 'opens 09:00',
+          name: "Sammy's Berliner Donuts", kind: 'donuts',
+          addr: 'Sophienstraße 30',
+          body: 'First shutter of the day. A Berliner (the doughnut) for elevenses at nine.',
+          walk: 'then ~3 min east to Rosenthaler Straße',
+        },
+        {
+          lat: 52.5245, lng: 13.4022, time: '09:15', open: 'opens 09:00',
+          name: 'Museum Blindenwerkstatt Otto Weidt', kind: 'museum',
+          addr: 'Rosenthaler Straße 39 (Haus Schwarzenberg)',
+          body: 'Otto Weidt\'s workshop for the blind — small, moving, and a good way to fill the hour before the shops open at 10. Right next door to the Hackesche Höfe.',
+          walk: 'then 1 min — Arket is a few doors up',
+        },
+        {
+          lat: 52.5249, lng: 13.4017, time: '10:00', open: 'opens 10:00',
+          name: 'Arket', kind: 'clothing',
+          addr: 'Rosenthaler Straße 36',
+          body: 'Doors at ten. There\'s a café upstairs if the donut has worn off.',
+          walk: 'then 1 min across into Hackesche Höfe',
+        },
+        {
+          lat: 52.5243, lng: 13.4027, time: '10:25', open: 'opens 10:00',
+          name: 'Aseli', kind: 'sweets',
+          addr: 'Rosenthaler Straße 40–41, Hackesche Höfe',
+          body: 'Berlin sweets since 1921 — the boutique in the Höfe. (Same courtyard complex as Sawade, so you\'ll be back here at 11.)',
+          walk: 'then ~1 min toward Hackescher Markt',
+        },
+        {
+          lat: 52.5238, lng: 13.4032, time: '10:40', open: 'opens 10:00',
+          name: 'H&M Home', kind: 'homeware',
+          addr: 'Rosenthaler Straße 43–44',
+          body: 'The concept/home store at the Hackescher Markt end of Rosenthaler.',
+          walk: 'then ~1 min back into the Höfe for 11:00',
+        },
+        {
+          lat: 52.5241, lng: 13.4030, time: '11:00', open: 'opens 11:00',
+          name: 'Sawade', kind: 'chocolate',
+          addr: 'Hackesche Höfe, Hof II (Rosenthaler Straße 40–41)',
+          body: 'Berlin\'s oldest chocolate manufactory. Opens on the dot of 11 — hence its slot after the 10 o\'clock shops.',
+          walk: 'then ~4 min west to Große Hamburger Straße',
+        },
+        {
+          lat: 52.5250, lng: 13.3998, time: '12:00', open: 'opens 12:00',
+          name: 'She Who Saw', kind: 'design store · finish',
+          addr: 'Große Hamburger Straße 31',
+          body: 'The last opener at noon, so it closes the loop. A curated design store — a calm end to the round before lunch.',
+          walk: null,
+        },
+      ];
+
+      // ----- map -----
+      const map = L.map('map', { scrollWheelZoom: false });
+      L.control.scale({ imperial: false }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap contributors, © CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // route line through the stops, in order
+      const line = L.polyline(stops.map((s) => [s.lat, s.lng]), {
+        color: '#1b1b1b', weight: 3, opacity: 0.55, dashArray: '6 7',
+      }).addTo(map);
+
+      const els = [];
+      const markers = stops.map((s, i) => {
+        const icon = L.divIcon({
+          className: '',
+          html: `<div class="route-pin${s.start ? ' start' : ''}">${i + 1}</div>`,
+          iconSize: [30, 30], iconAnchor: [15, 15],
+        });
+        const m = L.marker([s.lat, s.lng], { icon, title: s.name }).addTo(map);
+        m.bindPopup(`<strong>${i + 1}. ${s.name}</strong><br>${s.time} · ${s.addr}`);
+        m.on('click', () => activate(i));
+        return m;
+      });
+      map.fitBounds(line.getBounds(), { padding: [45, 45] });
+
+      // ----- itinerary list -----
+      const listEl = document.getElementById('stops');
+      let active = -1;
+      function activate(i) {
+        if (active >= 0) els[active].classList.remove('is-active');
+        active = i;
+        els[i].classList.add('is-active');
+        markers[i].openPopup();
+        map.panTo([stops[i].lat, stops[i].lng], { animate: true });
+      }
+
+      stops.forEach((s, i) => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'stop' + (s.start ? ' start' : '');
+        btn.innerHTML = `
+          <div class="badge">${i + 1}</div>
+          <div>
+            <span class="time">${s.time}</span>
+            <span class="stop-open" style="color:var(--muted);font-size:.82rem;margin-left:.4rem">${s.open}</span>
+            <p class="name">${s.name}<span class="tag">${s.kind}</span></p>
+            <p class="addr">${s.addr}</p>
+            <p class="body">${s.body}</p>
+            ${s.walk ? `<span class="walk">↳ ${s.walk}</span>` : '<span class="walk">✓ finish</span>'}
+          </div>`;
+        btn.addEventListener('click', () => activate(i));
+        li.appendChild(btn);
+        listEl.appendChild(li);
+        els.push(btn);
+      });
+    </script>
+  </body>
+</html>
